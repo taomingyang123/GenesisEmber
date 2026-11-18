@@ -1,0 +1,319 @@
+{
+  "governments": [
+    {
+      "id": "anarchy",
+      "name": "无政府",
+      "era": 1,
+      "reqTech": null,
+      "desc": "原始部落自治。工作压力减半，但人口突破 25 人后全局效率微幅分散 (-10%)。"
+    },
+    {
+      "id": "autocracy",
+      "name": "专制",
+      "era": 2,
+      "reqTech": "currency",
+      "desc": "军令铁腕统治：战斗评级 +35%、工作压力 +18%、工业重工 +18%，免疫战争贩子惩罚。"
+    },
+    {
+      "id": "democracy",
+      "name": "民主",
+      "era": 2,
+      "reqTech": "currency",
+      "desc": "公民议会：艺人/剧场士气效果 +25%、全局士气 +12%、科研与贸易 +10%，战斗评级 -5%。"
+    },
+    {
+      "id": "oligarchy",
+      "name": "寡头",
+      "era": 2,
+      "reqTech": "trade",
+      "desc": "财阀议政：税率上限提升至 50%，抗税暴动阈值 +20%，集市与银行效果 +20%。"
+    },
+    {
+      "id": "theocracy",
+      "name": "神权",
+      "era": 2,
+      "reqTech": "writing",
+      "desc": "神恩布道：寺庙加成 +50% 且解锁牧师职业，全球凝聚力提升，教授/科学家知识产量 -15%。"
+    },
+    {
+      "id": "republic",
+      "name": "共和",
+      "era": 2,
+      "reqTech": "currency",
+      "desc": "代议共和：银行家效果 +25%、全局士气 +20%，但市民可能发起抗议事件。"
+    },
+    {
+      "id": "socialist",
+      "name": "社会主义",
+      "era": 3,
+      "reqTech": "industrialization",
+      "desc": "计划协同：工匠锻造物 +35%、工厂/水泥厂产出 +20%，税收金币收入 -15%。"
+    },
+    {
+      "id": "corpocracy",
+      "name": "公司官僚主义",
+      "era": 3,
+      "reqTech": "industrialization",
+      "desc": "超级财团统治：税收减半，但赌场/旅游收入 +150%、工厂/水泥产出 +30%，士气 -8%。"
+    },
+    {
+      "id": "technocracy",
+      "name": "技术官僚主义",
+      "era": 3,
+      "reqTech": "industrialization",
+      "desc": "科学精英治国：科技研究知识成本 -8%、全局知识产量 +22%，建筑建材成本 +3%。"
+    },
+    {
+      "id": "federation",
+      "name": "联邦制",
+      "era": 6,
+      "reqTech": "spaceExploration",
+      "desc": "星际联合联邦：每征服/吞并一国全局产量额外 +15%，全局士气 +15%，所有产出 +25%。"
+    }
+  ],
+  "governorBackgrounds": [
+    {
+      "id": "soldier",
+      "name": "士兵",
+      "title": "将军",
+      "desc": "拥有丰富战场经验的指挥官。",
+      "effectText": "战斗评级 +15%，士兵伤亡 -15%，新兵训练加速",
+      "mods": { "combat": 1.15, "casualty": 0.85 }
+    },
+    {
+      "id": "criminal",
+      "name": "罪犯",
+      "title": "教父",
+      "desc": "地下世界的话事人，精于灰色收入与潜行渗透。",
+      "effectText": "贸易与赌场金币 +20%，间谍成本 -25%",
+      "mods": { "money": 1.20, "spyCost": 0.75 }
+    },
+    {
+      "id": "entrepreneur",
+      "name": "企业家",
+      "title": "董事长",
+      "desc": "善于投机与供应链优化的商业奇才。",
+      "effectText": "银行与税收 +20%，自动贸易路线吞吐 +15%",
+      "mods": { "tax": 1.20, "tradeVol": 1.15 }
+    },
+    {
+      "id": "educator",
+      "name": "教育家",
+      "title": "校长",
+      "desc": "对科学教育体系有着深刻洞察的学者。",
+      "effectText": "图书馆/大学上限 +20%，全局知识产出 +15%",
+      "mods": { "knowCap": 1.20, "knowledge": 1.15 }
+    },
+    {
+      "id": "spiritual",
+      "name": "神使",
+      "title": "大主教",
+      "desc": "以信仰凝聚民众精神、平息劳作压力的导师。",
+      "effectText": "寺庙信仰与全球士气 +10%",
+      "mods": { "morale": 10, "temple": 1.30 }
+    },
+    {
+      "id": "bluecollar",
+      "name": "蓝领工人",
+      "title": "总监工",
+      "desc": "深入工业一线、熟悉熔炉与流水线的实干派。",
+      "effectText": "矿工、工匠与工厂工业配方产出 +15%",
+      "mods": { "industry": 1.15, "mine": 1.12 }
+    },
+    {
+      "id": "noble",
+      "name": "贵族",
+      "title": "公爵",
+      "desc": "虽略微高傲，却能震慑外邦、扩大税基。",
+      "effectText": "税收 +15%，外交收购与安抚成本 -15%",
+      "mods": { "tax": 1.15, "diploDiscount": 0.85 }
+    },
+    {
+      "id": "media",
+      "name": "媒体人",
+      "title": "超级主播",
+      "desc": "舆论引导大师，擅于维持城市繁荣声望。",
+      "effectText": "剧场/旅游收入 +25%，士气上限 +10%",
+      "mods": { "tourism": 1.25, "moraleCap": 10 }
+    },
+    {
+      "id": "sports",
+      "name": "体育人",
+      "title": "总教练",
+      "desc": "国民健身与团队协作推动者。",
+      "effectText": "士气 +8%，伤兵恢复加速 +30%",
+      "mods": { "morale": 8, "heal": 1.30 }
+    },
+    {
+      "id": "bureaucrat",
+      "name": "官僚",
+      "title": "首席市政官",
+      "desc": "经验丰富的行政专家，大幅压低公共事业内耗。",
+      "effectText": "建筑材料成本 -5%，所有总督自动任务效率提升",
+      "mods": { "buildCost": 0.95 }
+    }
+  ],
+  "governorTasks": [
+    { "id": "autoJobs", "name": "智能分派空闲市民", "desc": "优先保障食物不缺，余下自动填补学者、矿工等空缺岗位。" },
+    { "id": "autoTax", "name": "税收士气动态平衡", "desc": "自动维持税率在最高收益同时避免士气低于 95% 或触发暴动。" },
+    { "id": "autoStorage", "name": "自动构建与分配箱柜", "desc": "建材盈余时自动建造板条箱/集装箱并分配给接近满仓的资源。" },
+    { "id": "autoMerc", "name": "自动聘请补充士兵", "desc": "金币充足且兵营未满编时自动补充新兵或雇佣兵。" },
+    { "id": "autoSpy", "name": "自动培训与派遣间谍", "desc": "自动向未征服邻国补充间谍并定期执行破坏或亲善行动。" },
+    { "id": "autoInfra", "name": "自动辅助建设住房/农田", "desc": "住房将满时自动建造简陋居所，粮食紧张时自动扩建农田。" }
+  ],
+  "arpaProjects": [
+    {
+      "id": "lhc",
+      "name": "超级对撞机",
+      "era": 3,
+      "reqTech": "industrialization",
+      "growth": 1.075,
+      "baseCost": { "money": 3500, "knowledge": 1200, "copper": 220, "steel": 140 },
+      "desc": "高能粒子对撞研究设施，深化人类对基础物理的理解。",
+      "effectText": "每完成 1 座：图书馆/大学/研究中心知识上限 +15%，全局科研效率 +4%"
+    },
+    {
+      "id": "stock_exchange",
+      "name": "证券交易所",
+      "era": 2,
+      "reqTech": "trade",
+      "growth": 1.06,
+      "baseCost": { "money": 1800, "plywood": 90, "brick": 80, "wroughtIron": 45 },
+      "desc": "现代化金融资本市场枢纽，大幅放大银行资金容量与商业活力。",
+      "effectText": "每完成 1 座：银行金币上限 +15%，集市/银行/赌场收入 +12%"
+    },
+    {
+      "id": "monument",
+      "name": "纪念碑",
+      "era": 2,
+      "reqTech": "construction",
+      "growth": 1.08,
+      "baseCost": { "stone": 250, "lumber": 180, "cement": 60, "steel": 40 },
+      "variants": ["方尖碑", "英雄雕像", "艺术雕塑", "玄武独石", "凯旋石柱", "太古巨石阵"],
+      "desc": "建造宏伟纪念碑以赞颂文明的丰功伟业与不朽荣耀。",
+      "effectText": "每完成 1 座：全局士气上限 +4%，当前士气 +2%，旅游魅力提升"
+    },
+    {
+      "id": "railway",
+      "name": "铁路",
+      "era": 3,
+      "reqTech": "mechanicalEngineering",
+      "growth": 1.08,
+      "baseCost": { "money": 2600, "lumber": 350, "iron": 180, "steel": 120 },
+      "desc": "横贯大陆的铁路交通干线，连接各大矿区与贸易枢纽。",
+      "effectText": "每完成 1 条：贸易路线可用上限 +2，贸易利润 +6%"
+    },
+    {
+      "id": "launch_facility",
+      "name": "发射设施",
+      "era": 5,
+      "reqTech": "artificialIntelligence",
+      "growth": 1.12,
+      "maxRank": 3,
+      "baseCost": { "money": 28000, "knowledge": 18000, "steel": 250, "cement": 220, "oil": 180 },
+      "desc": "重型航天火箭装配与垂直发射复合体。",
+      "effectText": "每升 1 级：火箭部件与深空工业制造效率 +25%，大幅加速方舟建造"
+    }
+  ],
+  "crisprUpgrades": [
+    { "id": "morphogenesis", "name": "形态发生", "req": [], "cost": 8, "desc": "开启基因工程微调，大幅缩减基因测序周期 (-25%)。" },
+    { "id": "recombination", "name": "基因重组", "req": ["morphogenesis"], "cost": 20, "desc": "基因突变获得额外效果，全局生命与农业产率 +12%。" },
+    { "id": "synthesis", "name": "合成", "req": ["recombination"], "cost": 45, "desc": "DNA 自动测序速度与 Genes 基因点产量翻倍 (+100%)。" },
+    { "id": "mitosis", "name": "有丝分裂", "req": ["synthesis"], "cost": 85, "desc": "转生时获得的质粒/创世余烬收益永久 +25%。" },
+    { "id": "mutation", "name": "突变", "req": ["synthesis"], "cost": 120, "desc": "可在【基因实验室】消耗基因点数移除物种先天负面特质！" },
+    { "id": "artificer", "name": "技工", "req": ["morphogenesis"], "cost": 22, "desc": "工匠手动与自动锻造产出 +40%，原料利用率优化。" },
+    { "id": "detail_oriented", "name": "注重细节", "req": ["artificer"], "cost": 55, "desc": "工匠与工业设施原料消耗不变而产出额外 +25%。" },
+    { "id": "rigorous", "name": "一丝不苟", "req": ["detail_oriented"], "cost": 110, "desc": "全文明制造业（钢、水泥、晶圆、芯片、火箭）产率 +25%。" },
+    { "id": "geographer", "name": "地理学家", "req": [], "cost": 10, "desc": "开局直接解锁增强版【建筑队列】与【研究队列】（上限 6 项）。" },
+    { "id": "architect", "name": "建筑师", "req": ["geographer"], "cost": 35, "desc": "建筑与研究队列上限翻倍至 14 项，队列自动执行速度提升。" },
+    { "id": "precognition", "name": "预知未来", "req": ["architect"], "cost": 70, "desc": "在研究面板中提前预览下一时代的全部未来科技树！" },
+    { "id": "governance", "name": "总督", "req": ["geographer"], "cost": 18, "desc": "永久解锁【总督】系统，开局即可任命行政总督自动打理内政。" },
+    { "id": "civil_service", "name": "能臣干吏", "req": ["governance"], "cost": 50, "desc": "总督可解锁全部 6 项自动治理任务，且总督数值加成 +50%。" },
+    { "id": "hardened_genes", "name": "基因硬化", "req": [], "cost": 12, "desc": "提升基因组稳定性与核辐射抗性，全资源上限 +10%。" },
+    { "id": "unlocked", "name": "基因解锁", "req": ["hardened_genes"], "cost": 30, "desc": "激活成就【精通 Mastery】：每个已解锁成就提供全局产率加成！" },
+    { "id": "mastered", "name": "精通掌控", "req": ["unlocked"], "cost": 95, "desc": "解锁【精通】次要基因特质升级，成倍放大成就 Mastery 收益。" },
+    { "id": "negotiator", "name": "谈判专家", "req": ["hardened_genes"], "cost": 40, "desc": "自动贸易路线的吞吐上限与利润额外受精通 % 加成。" },
+    { "id": "ancients", "name": "先祖", "req": ["recombination"], "cost": 60, "desc": "寺庙与牧师的信仰全局产率加成翻倍，开局赠送 1 座寺庙。" }
+  ],
+  "extraBuildings": [
+    {
+      "id": "shed",
+      "name": "谷仓货棚",
+      "era": 1,
+      "reqTech": "agriculture",
+      "growth": 1.15,
+      "baseCost": { "lumber": 40, "stone": 25 },
+      "desc": "基础存储设施：食物 +300、木材 +200、石材 +200 容量。"
+    },
+    {
+      "id": "storage_yard",
+      "name": "货场",
+      "era": 2,
+      "reqTech": "construction",
+      "growth": 1.18,
+      "baseCost": { "money": 120, "lumber": 90, "stone": 75 },
+      "desc": "物流仓储中心：板条箱上限 +8/座，可分配板条箱大幅扩容任意资源。"
+    },
+    {
+      "id": "temple",
+      "name": "寺庙",
+      "era": 2,
+      "reqTech": "writing",
+      "growth": 1.22,
+      "baseCost": { "money": 200, "stone": 120, "lumber": 80 },
+      "desc": "精神信仰殿堂：全局生产产率 +3%/座，释放贸易路线 +1/座（最高+5）。"
+    },
+    {
+      "id": "boot_camp",
+      "name": "新兵训练营",
+      "era": 2,
+      "reqTech": "ironAge",
+      "growth": 1.24,
+      "baseCost": { "money": 260, "stone": 140, "iron": 40 },
+      "desc": "加快新兵训练与伤兵康复 +20%/座，缩短间谍培训时间。"
+    },
+    {
+      "id": "hospital",
+      "name": "医院",
+      "era": 3,
+      "reqTech": "industrialization",
+      "growth": 1.24,
+      "baseCost": { "money": 950, "cement": 70, "brick": 50 },
+      "desc": "现代化医疗机构（耗电 2MW）：人口生长速度 +12%/座，加速伤兵治愈。"
+    },
+    {
+      "id": "casino",
+      "name": "赌场",
+      "era": 3,
+      "reqTech": "trade",
+      "growth": 1.25,
+      "baseCost": { "money": 1600, "brick": 80, "steel": 45 },
+      "desc": "商业娱乐综合体（耗电 3MW）：金币上限 +5,000，自动产出金币 +6/s。"
+    },
+    {
+      "id": "tourist_center",
+      "name": "游客中心",
+      "era": 3,
+      "reqTech": "electricity",
+      "growth": 1.24,
+      "baseCost": { "money": 2400, "steel": 65, "cement": 80 },
+      "desc": "文旅创收中心（耗电 4MW）：依据城市纪念碑数量与士气持续产出高额旅游金币。"
+    }
+  ],
+  "extraJobs": [
+    { "id": "entertainer", "name": "艺人", "era": 2, "reqTech": "currency", "out": {}, "desc": "市民士气 +3%/人，缓解高税率与工作压力" },
+    { "id": "banker", "name": "银行家", "era": 2, "reqTech": "currency", "out": { "money": 0.9 }, "desc": "金币 +0.9/s/人，且使全国税收额外 +6%/人" },
+    { "id": "priest", "name": "牧师", "era": 2, "reqTech": "writing", "out": { "knowledge": 0.4 }, "desc": "知识 +0.4/s/人，提升寺庙信仰全局加成 +1.5%/人" }
+  ],
+  "foreign": {
+    "prefixes": ["神圣", "太阳", "月亮", "联合", "北方", "南方", "东方", "西方", "人民", "贸易", "阴影", "星辰"],
+    "suffixes": ["联合政府", "共和国", "同盟", "王国", "帝国", "联盟", "保护国", "酋长国", "自治领", "王朝"],
+    "tactics": [
+      { "id": 0, "name": "伏击", "powerReq": 15, "lootMult": 0.45, "risk": 0.10, "hstlGain": 2, "desc": "极低风险试探性伏击，战损极少但战利品较少。" },
+      { "id": 1, "name": "突袭", "powerReq": 45, "lootMult": 1.00, "risk": 0.25, "hstlGain": 5, "desc": "常规军事突袭，掠夺基础物资与金币。" },
+      { "id": 2, "name": "抢劫", "powerReq": 95, "lootMult": 1.85, "risk": 0.45, "hstlGain": 10, "desc": "大规模掠夺资源仓库，敌意大幅升高。" },
+      { "id": 3, "name": "突击", "powerReq": 180, "lootMult": 3.00, "risk": 0.65, "hstlGain": 18, "desc": "主力重兵正面突击，收获巨额战利品并重创敌方军力。" },
+      { "id": 4, "name": "围城", "powerReq": 320, "lootMult": 4.50, "risk": 0.85, "hstlGain": 30, "desc": "决战围城！胜利后可直接【占领】该国获得永久征税与领土增益！" }
+    ]
+  }
+}

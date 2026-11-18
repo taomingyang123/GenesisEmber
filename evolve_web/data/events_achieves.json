@@ -1,0 +1,132 @@
+{
+  "events": [
+    { "id": "shooting_star", "type": "minor", "minEra": 1, "text": "一颗璀璨流星划破夜空，学者们观测天文获得了灵感 (+知识)。", "effect": { "resPct": { "knowledge": 0.04 } } },
+    { "id": "meteor_shower", "type": "minor", "minEra": 1, "text": "绚丽的流星雨倾泻而下，全城居民士气微增，天文学家记下星象 (+知识)。", "effect": { "resPct": { "knowledge": 0.06 }, "moraleTemp": 3 } },
+    { "id": "tumbleweed", "type": "minor", "minEra": 1, "text": "风滚草吹遍了整座城市街头，市民略感荒凉。", "effect": {} },
+    { "id": "furryfish", "type": "minor", "minEra": 1, "text": "媒体大肆传闻一种长毛小鱼，虽然没人亲眼见过，但寻找毛毛鱼成为街头时尚！", "effect": { "moraleTemp": 2 } },
+    { "id": "cucumber", "type": "minor", "minEra": 1, "text": "一位市民品尝了藤蔓上的恐怖圆柱蔬菜（实际为黄瓜）后呕吐不止，引发一阵喧闹。", "effect": {} },
+    { "id": "heatwave", "type": "minor", "minEra": 1, "text": "热浪突然袭击了整座城市，气温升高为【炎热】。", "effect": { "setTemp": 2 } },
+    { "id": "coldsnap", "type": "minor", "minEra": 1, "text": "突如其来的寒流席卷领地，气温骤降为【寒冷】。", "effect": { "setTemp": 0 } },
+    { "id": "dark_cloud", "type": "minor", "minEra": 1, "text": "乌云密布天际，大雨随时可能降临。", "effect": { "setWeather": 4 } },
+    { "id": "sun_burst", "type": "minor", "minEra": 1, "text": "阳光穿透云层照耀沃土，天气转为晴朗！", "effect": { "setWeather": 0 } },
+    { "id": "ruins", "type": "major", "minEra": 1, "reqAncient": true, "text": "考古队在地下发掘出一座远古先祖遗迹，带回大量基础物资！", "effect": { "resMultiPct": { "food": 0.12, "lumber": 0.12, "stone": 0.12, "iron": 0.15, "copper": 0.15 } } },
+    { "id": "klepto", "type": "major", "minEra": 2, "text": "一队商旅在集市顺手拾得无主珍宝与钱币 (+金币)。", "effect": { "resPct": { "money": 0.08 } } },
+    { "id": "dollar", "type": "minor", "minEra": 2, "text": "财政司在旧金库夹层中清点出遗失的零散钱币 (+金币)。", "effect": { "resFlat": { "money": 45 } } },
+    { "id": "contest", "type": "minor", "minEra": 2, "text": "城邦举办了盛大的全城角力与艺术竞赛，街头欢呼声不断 (+士气)！", "effect": { "moraleTemp": 5 } },
+    { "id": "discover_oil", "type": "major", "minEra": 2, "text": "勘探队意外在岩层裂隙中发现了一处天然浅层油田 (+石油/煤)！", "effect": { "resFlat": { "coal": 35, "oil": 20 } } },
+    { "id": "mine_collapse", "type": "major", "minEra": 2, "text": "深处矿井发生局部坍塌事故，工头迅速组织抢险并损失了少量矿产。", "effect": { "resPct": { "stone": -0.04, "iron": -0.04 } } },
+    { "id": "flashmob", "type": "minor", "minEra": 3, "text": "一群青年在中心广场表演了一套无懈可击的机械快闪舞蹈，众人拍手叫绝！", "effect": { "moraleTemp": 4 } },
+    { "id": "planking", "type": "minor", "minEra": 3, "text": "拍“扑街照”忽然成为城市里的潮流文化，看起来蠢萌蠢萌的。", "effect": {} },
+    { "id": "scandal", "type": "major", "minEra": 3, "text": "一家小报刊登了一则关于市政预算的狗仔八卦，引来些许市民议论 (-士气 2%)。", "effect": { "moraleTemp": -3 } },
+    { "id": "protest", "type": "major", "minEra": 2, "reqGov": "republic", "text": "共和体制下，两派市民就披萨是否应该加菠萝展开激烈游行抗议！", "effect": { "moraleTemp": -5 } },
+    { "id": "solar_boom", "type": "major", "minEra": 4, "text": "强烈的电离层磁暴意外启发了高能物理小组的实验突破 (+知识/电子)！", "effect": { "resPct": { "knowledge": 0.08, "electronics": 0.06 } } },
+    { "id": "quantum_echo", "type": "major", "minEra": 5, "text": "超算中心捕获到一组极其规律的宇宙微波脉冲信号，算力与知识瞬间飙升！", "effect": { "resPct": { "knowledge": 0.10, "money": 0.05 } } },
+    { "id": "asteroid_gift", "type": "major", "minEra": 6, "text": "一颗近地小行星被捕获并顺利分解入库 (+氦-3 / 稀有矿物)！", "effect": { "resPct": { "helium3": 0.12, "rareMineral": 0.12 } } }
+  ],
+  "achievements": [
+    { "id": "ach_first_rna", "name": "原初火花", "category": "进化", "desc": "在生命起源阶段首次合成 DNA。", "check": "dna_created", "mastery": 1 },
+    { "id": "ach_second_evolution", "name": "智慧黎明", "category": "进化", "desc": "研究【智人诞生】，步入农业文明。", "check": "era_1", "mastery": 1.5 },
+    { "id": "ach_city_rise", "name": "城邦崛起", "category": "时代", "desc": "解锁【城市文明】。", "check": "era_2", "mastery": 1.5 },
+    { "id": "ach_industrial_age", "name": "蒸汽与钢铁", "category": "时代", "desc": "解锁【工业文明】。", "check": "era_3", "mastery": 2 },
+    { "id": "ach_atomic_dawn", "name": "裂变时代", "category": "时代", "desc": "解锁【原子时代】。", "check": "era_4", "mastery": 2 },
+    { "id": "ach_info_boom", "name": "硅基纪元", "category": "时代", "desc": "解锁【信息文明】。", "check": "era_5", "mastery": 2.5 },
+    { "id": "ach_space_odyssey", "name": "星辰大海", "category": "时代", "desc": "解锁【太空文明】。", "check": "era_6", "mastery": 3 },
+    { "id": "ach_pop_25", "name": "繁荣聚落", "category": "人口", "desc": "单局总人口达到 25 人。", "check": "pop_25", "mastery": 1 },
+    { "id": "ach_pop_100", "name": "百人城邦", "category": "人口", "desc": "单局总人口达到 100 人。", "check": "pop_100", "mastery": 1.5 },
+    { "id": "ach_pop_250", "name": "摩登都会", "category": "人口", "desc": "单局总人口达到 250 人。", "check": "pop_250", "mastery": 2 },
+    { "id": "ach_morale_130", "name": "极乐净土", "category": "民生", "desc": "城市士气达到 130% 以上。", "check": "morale_130", "mastery": 1.5 },
+    { "id": "ach_scrooge", "name": "守财奴", "category": "财富", "desc": "金币库存突破 50,000。", "check": "money_50k", "mastery": 1.5 },
+    { "id": "ach_millionaire", "name": "钱如废纸", "category": "财富", "desc": "金币库存突破 500,000。", "check": "money_500k", "mastery": 2.5 },
+    { "id": "ach_enlightenment", "name": "启蒙时代", "category": "科研", "desc": "知识库存突破 50,000。", "check": "know_50k", "mastery": 2 },
+    { "id": "ach_trade_fed", "name": "贸易联邦", "category": "经济", "desc": "同时开通至少 5 条自动贸易路线。", "check": "trade_5", "mastery": 1.5 },
+    { "id": "ach_warehouse", "name": "仓鼠帝国", "category": "仓储", "desc": "累计制造 20 个板条箱或集装箱。", "check": "storage_20", "mastery": 1.5 },
+    { "id": "ach_power_100", "name": "电力澎湃", "category": "工业", "desc": "电网总发电量达到 100 MW。", "check": "power_100", "mastery": 1.5 },
+    { "id": "ach_power_1000", "name": "聚变奇观", "category": "工业", "desc": "电网总发电量达到 1,000 MW。", "check": "power_1000", "mastery": 2.5 },
+    { "id": "ach_arpa_1", "name": "巨构奠基", "category": "ARPA", "desc": "完成任意 1 项 ARPA 大型工程。", "check": "arpa_1", "mastery": 1.5 },
+    { "id": "ach_arpa_5", "name": "奇迹缔造者", "category": "ARPA", "desc": "累计完成 5 项 ARPA 大型工程。", "check": "arpa_5", "mastery": 2.5 },
+    { "id": "ach_genelab", "name": "基因破译", "category": "基因", "desc": "通过基因组测序累计获得 5 枚基因点数。", "check": "genes_5", "mastery": 2 },
+    { "id": "ach_warmonger", "name": "铁血征服者", "category": "军事", "desc": "累计发起并赢得 5 次军事战役。", "check": "win_5", "mastery": 1.5 },
+    { "id": "ach_world_domination", "name": "统一世界", "category": "外交", "desc": "通过军事占领、间谍吞并或收购统一全部 3 个邻国！", "check": "unify_3", "mastery": 3 },
+    { "id": "ach_pacifist", "name": "和平主义者", "category": "外交", "desc": "未发动任何战斗，纯靠谍报吞并或收购统一世界！", "check": "pacifist_unify", "mastery": 3.5 },
+    { "id": "ach_mad", "name": "启示录", "category": "转生", "desc": "完成至少 1 次【相互保证毁灭 (MAD)】核弹重置。", "check": "mad_1", "mastery": 3 },
+    { "id": "ach_bioseed", "name": "播种者", "category": "转生", "desc": "建造殖民方舟并完成至少 1 次【恒星际跃迁】。", "check": "ark_1", "mastery": 4 },
+    { "id": "ach_crispr_5", "name": "基因编辑师", "category": "基因", "desc": "在 CRISPR 基因池中解锁至少 5 项升级。", "check": "crispr_5", "mastery": 2.5 },
+    { "id": "ach_governor", "name": "垂拱而治", "category": "内政", "desc": "任命 1 位总督协助管理你的文明。", "check": "governor_1", "mastery": 1.5 },
+    { "id": "ach_mission_51", "name": "史诗圆满", "category": "任务", "desc": "单局完成全部 51 项顺序主线任务。", "check": "mission_51", "mastery": 3.5 },
+    { "id": "ach_heavy_win", "name": "引力主宰", "category": "宇宙", "desc": "在【高引力宇宙】完成至少 1 次跃迁或核爆。", "check": "univ_heavy", "mastery": 3 }
+  ],
+  "themes": [
+    {
+      "id": "pixel",
+      "name": "像素终端 (默认)",
+      "vars": {
+        "--bg-main": "#0b0f17", "--bg-panel": "#111827", "--bg-card": "#161f33",
+        "--bg-card-hover": "#1e293b", "--border-dim": "#263248", "--border-bright": "#3b4d6b",
+        "--text-main": "#e2e8f0", "--text-muted": "#94a3b8", "--text-dim": "#64748b"
+      }
+    },
+    {
+      "id": "gruvboxDark",
+      "name": "GruvBox 黑暗",
+      "vars": {
+        "--bg-main": "#1d2021", "--bg-panel": "#282828", "--bg-card": "#32302f",
+        "--bg-card-hover": "#3c3836", "--border-dim": "#504945", "--border-bright": "#7c6f64",
+        "--text-main": "#ebdbb2", "--text-muted": "#d5c4a1", "--text-dim": "#a89984"
+      }
+    },
+    {
+      "id": "dracula",
+      "name": "德古拉主题",
+      "vars": {
+        "--bg-main": "#21222c", "--bg-panel": "#282a36", "--bg-card": "#343746",
+        "--bg-card-hover": "#44475a", "--border-dim": "#44475a", "--border-bright": "#6272a4",
+        "--text-main": "#f8f8f2", "--text-muted": "#bd93f9", "--text-dim": "#6272a4"
+      }
+    },
+    {
+      "id": "dark",
+      "name": "经典黑暗",
+      "vars": {
+        "--bg-main": "#161919", "--bg-panel": "#1f2424", "--bg-card": "#272d2d",
+        "--bg-card-hover": "#313838", "--border-dim": "#3c4545", "--border-bright": "#1abc9c",
+        "--text-main": "#ffffff", "--text-muted": "#b2c2c2", "--text-dim": "#7f8c8d"
+      }
+    },
+    {
+      "id": "night",
+      "name": "极夜纯黑",
+      "vars": {
+        "--bg-main": "#000000", "--bg-panel": "#0a0a0a", "--bg-card": "#141414",
+        "--bg-card-hover": "#1f1f1f", "--border-dim": "#2a2a2a", "--border-bright": "#525252",
+        "--text-main": "#f5f5f5", "--text-muted": "#a3a3a3", "--text-dim": "#737373"
+      }
+    },
+    {
+      "id": "orangeSoda",
+      "name": "橘子汽水",
+      "vars": {
+        "--bg-main": "#131516", "--bg-panel": "#1a1d1f", "--bg-card": "#24282b",
+        "--bg-card-hover": "#2f3438", "--border-dim": "#3b4045", "--border-bright": "#f97316",
+        "--text-main": "#f3f4f6", "--text-muted": "#fdba74", "--text-dim": "#9ca3af"
+      }
+    },
+    {
+      "id": "gruvboxLight",
+      "name": "GruvBox 明亮",
+      "vars": {
+        "--bg-main": "#f2e5bc", "--bg-panel": "#fbf1c7", "--bg-card": "#ebdbb2",
+        "--bg-card-hover": "#d5c4a1", "--border-dim": "#bdae93", "--border-bright": "#7c6f64",
+        "--text-main": "#282828", "--text-muted": "#504945", "--text-dim": "#7c6f64"
+      }
+    },
+    {
+      "id": "light",
+      "name": "明亮护眼",
+      "vars": {
+        "--bg-main": "#e2e8f0", "--bg-panel": "#f8fafc", "--bg-card": "#ffffff",
+        "--bg-card-hover": "#f1f5f9", "--border-dim": "#cbd5e1", "--border-bright": "#64748b",
+        "--text-main": "#0f172a", "--text-muted": "#475569", "--text-dim": "#64748b"
+      }
+    }
+  ]
+}

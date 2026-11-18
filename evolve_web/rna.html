@@ -1,0 +1,3683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>像素人类纪元：从RNA到核威慑与星际方舟 (Evolve 增强版)</title>
+    <style>
+        /* =====================================================================
+           1. 纯像素街机终端全局样式（零外部依赖，自适应PC双栏 & 移动端单屏）
+           ===================================================================== */
+        :root {
+            --bg-main: #0b0f17;
+            --bg-panel: #111827;
+            --bg-card: #161f33;
+            --bg-card-hover: #1e293b;
+            --border-dim: #263248;
+            --border-bright: #3b4d6b;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --accent-emerald: #10b981;
+            --accent-sky: #38bdf8;
+            --accent-amber: #f59e0b;
+            --accent-purple: #a855f7;
+            --accent-rose: #f43f5e;
+            --accent-indigo: #6366f1;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        /* 像素风格边框与按钮 */
+        .pixel-box {
+            background-color: var(--bg-panel);
+            border: 2px solid var(--border-dim);
+            border-radius: 4px;
+        }
+
+        .pixel-card {
+            background-color: var(--bg-card);
+            border: 2px solid var(--border-dim);
+            border-radius: 4px;
+            transition: border-color 0.12s ease, background-color 0.12s ease;
+        }
+
+        .pixel-btn {
+            font-family: var(--font-mono);
+            border: 2px solid rgba(255, 255, 255, 0.18);
+            border-bottom-width: 3px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.06s ease, filter 0.1s ease;
+            touch-action: manipulation;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .pixel-btn:active:not(:disabled) {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+
+        .pixel-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            filter: grayscale(0.4);
+        }
+
+        /* 可选 CRT 扫描线（默认关闭以保持低功耗与清晰度） */
+        body.crt-enabled::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 999;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.16) 0px,
+                rgba(0, 0, 0, 0.16) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+        }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f17;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2b3952;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3e5275;
+        }
+
+        /* =====================================================================
+           2. 整体布局骨架（PC 双栏 vs 移动端单屏锁定）
+           ===================================================================== */
+        #app-shell {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            padding: env(safe-area-inset-top, 4px) 6px env(safe-area-inset-bottom, 4px) 6px;
+            gap: 6px;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* 顶部状态与任务栏 */
+        #top-header {
+            flex-shrink: 0;
+            padding: 6px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .header-row-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .era-badge-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .era-icon-box {
+            width: 34px;
+            height: 34px;
+            background: #17253b;
+            border: 2px solid #334a6e;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .kpi-strip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .kpi-pill {
+            background: #0d1422;
+            border: 1px solid #26354d;
+            border-radius: 4px;
+            padding: 3px 7px;
+            display: flex;
+            flex-direction: column;
+            min-width: 68px;
+            cursor: pointer;
+        }
+
+        .kpi-pill.prestige-pill {
+            background: #241238;
+            border-color: #6b21a8;
+        }
+
+        .kpi-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            line-height: 1.1;
+        }
+
+        .kpi-val {
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        .mission-banner {
+            background: #0d1526;
+            border: 1px solid #283b59;
+            border-radius: 4px;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+        }
+
+        .mission-banner:hover {
+            border-color: #38bdf8;
+        }
+
+        /* 主工作区 */
+        #main-workspace {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* 左侧舞台 + 全资源监控区 */
+        #left-pane {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 6px;
+            flex-shrink: 0;
+        }
+
+        .stage-top-row {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        /* 紧凑正方形像素舞台 */
+        #canvas-wrapper {
+            position: relative;
+            width: 112px;
+            height: 112px;
+            flex-shrink: 0;
+            border: 2px solid #384e73;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            background: #071318;
+            touch-action: manipulation;
+        }
+
+        #pixel-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .canvas-caption {
+            position: absolute;
+            bottom: 3px;
+            left: 3px;
+            right: 3px;
+            background: rgba(8, 13, 22, 0.82);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: #6ee7b7;
+            font-size: 10px;
+            text-align: center;
+            padding: 1px 2px;
+            border-radius: 2px;
+            pointer-events: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stage-info-col {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        .click-hint-badge {
+            background: rgba(16, 185, 129, 0.14);
+            border: 1px solid rgba(16, 185, 129, 0.45);
+            color: #6ee7b7;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 6px;
+            border-radius: 3px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .era-lore-text {
+            font-size: 11px;
+            color: #cbd5e1;
+            line-height: 1.35;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+        .stage-meta-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 10px;
+            color: var(--text-muted);
+            border-top: 1px dashed #26354d;
+            padding-top: 3px;
+        }
+
+        /* 左侧全文明资源库存监控区 */
+        #left-res-section {
+            display: flex;
+            flex-direction: column;
+            background: #0c121e;
+            border: 1px solid #24324a;
+            border-radius: 4px;
+            padding: 5px;
+            min-height: 0;
+            max-height: 102px;
+        }
+
+        .res-section-hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 700;
+            color: #38bdf8;
+            padding-bottom: 4px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #1e293b;
+            flex-shrink: 0;
+        }
+
+        #left-res-grid {
+            flex: 1;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 4px;
+            align-content: start;
+        }
+
+        .res-mini-card {
+            background: #131c2e;
+            border: 1px solid #233149;
+            border-radius: 3px;
+            padding: 3px 5px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .res-mini-card:hover {
+            border-color: #38bdf8;
+        }
+
+        .res-mini-left {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .res-mini-name {
+            font-weight: 700;
+            color: #e2e8f0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .res-mini-cap {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+
+        .res-mini-right {
+            text-align: right;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .res-mini-rate {
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .res-mini-eta {
+            font-size: 9px;
+            color: #64748b;
+        }
+
+        /* 左下双按钮操作栏 */
+        .left-action-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .action-main-btn {
+            min-height: 42px;
+            padding: 4px 6px;
+            flex-direction: column;
+            gap: 1px;
+            text-align: center;
+        }
+
+        /* 右侧 5 独立功能面板 */
+        #right-pane {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tab-bar {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 3px;
+            padding: 4px;
+            background: #0d1320;
+            border-bottom: 2px solid var(--border-dim);
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            position: relative;
+            min-height: 44px;
+            padding: 4px 2px;
+            background: #162033;
+            border: 1px solid #293852;
+            border-radius: 4px;
+            color: #94a3b8;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            touch-action: manipulation;
+        }
+
+        .tab-btn.active {
+            background: #1e2d4a;
+            border-color: #38bdf8;
+            color: #ffffff;
+            box-shadow: inset 0 -2px 0 #38bdf8;
+        }
+
+        .tab-badge {
+            position: absolute;
+            top: 3px;
+            right: 4px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10b981;
+            display: none;
+        }
+
+        .tab-badge.show {
+            display: block;
+        }
+
+        #tab-content {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        /* 浮动文字对象池 */
+        .float-text {
+            position: fixed;
+            pointer-events: none;
+            z-index: 900;
+            font-family: var(--font-mono);
+            font-weight: 800;
+            font-size: 13px;
+            color: #6ee7b7;
+            text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+            opacity: 0;
+            transform: translate3d(0, 0, 0);
+            will-change: transform, opacity;
+        }
+
+        .float-text.anim {
+            animation: floatUpAnim 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes floatUpAnim {
+            0% {
+                opacity: 1;
+                transform: translate3d(-50%, 0, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate3d(-50%, -38px, 0) scale(1.08);
+            }
+        }
+
+        /* 自定义模态框与提示条 */
+        #toast-bar {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-120%);
+            background: #0f172a;
+            border: 2px solid #38bdf8;
+            color: #f8fafc;
+            padding: 7px 14px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 700;
+            z-index: 1000;
+            transition: transform 0.2s ease;
+            pointer-events: none;
+            max-width: 92vw;
+            text-align: center;
+        }
+
+        #toast-bar.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        #modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 8, 15, 0.82);
+            z-index: 950;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+        }
+
+        #modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 460px;
+            background: #111827;
+            border: 2px solid #38bdf8;
+            border-radius: 6px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .modal-textarea {
+            width: 100%;
+            height: 96px;
+            background: #090d16;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            color: #38bdf8;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 8px;
+            resize: none;
+            user-select: text;
+        }
+
+        /* =====================================================================
+           3. PC 端宽屏街机双栏布局 (>= 768px)
+           ===================================================================== */
+        @media (min-width: 768px) {
+            #app-shell {
+                padding: 8px 10px;
+                gap: 8px;
+            }
+
+            #main-workspace {
+                flex-direction: row;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            #left-pane {
+                width: 390px;
+                flex-shrink: 0;
+                padding: 8px;
+                gap: 8px;
+            }
+
+            #canvas-wrapper {
+                width: 212px;
+                height: 212px;
+            }
+
+            .era-lore-text {
+                -webkit-line-clamp: 6;
+                font-size: 11.5px;
+            }
+
+            /* 左侧下方资源区域在 PC 端拉高占据全部剩余高度 */
+            #left-res-section {
+                flex: 1;
+                max-height: none;
+                padding: 7px;
+            }
+
+            .tab-btn {
+                flex-direction: row;
+                min-height: 40px;
+                font-size: 12px;
+                gap: 5px;
+                white-space: nowrap;
+            }
+        }
+
+        @media (min-width: 768px) and (max-width: 980px) {
+            #left-pane { width: 320px; }
+            #canvas-wrapper { width: 140px; height: 140px; }
+            .tab-btn { font-size: 10.5px; gap: 3px; padding: 4px; }
+            .subtab-btn { font-size: 10.5px; padding: 3px 6px; }
+        }
+
+        @media (max-width: 767px) {
+            #app-shell { padding: 4px; gap: 4px; }
+            #top-header { padding: 4px 6px; gap: 3px; }
+            #left-pane { padding: 5px; gap: 4px; }
+            #canvas-wrapper { width: 88px; height: 88px; }
+            #left-res-section { max-height: 76px; padding: 4px; }
+            .action-main-btn { min-height: 36px; padding: 3px 5px; }
+            .subtab-bar { gap: 3px; padding: 3px 4px; }
+            .subtab-btn { font-size: 10px; padding: 3px 4px; min-height: 24px; flex: 1 1 0; text-align: center; }
+        }
+
+        /* 通用工具类 */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-1 { gap: 4px; }
+        .gap-2 { gap: 8px; }
+        .flex-wrap { flex-wrap: wrap; }
+        .min-w-0 { min-width: 0; }
+        .shrink-0 { flex-shrink: 0; }
+        .w-full { width: 100%; }
+        .text-xs { font-size: 12px; }
+        .text-11 { font-size: 11px; }
+        .text-10 { font-size: 10px; }
+        .font-bold { font-weight: 700; }
+        .text-emerald { color: #34d399; }
+        .text-sky { color: #38bdf8; }
+        .text-amber { color: #fbbf24; }
+        .text-purple { color: #c084fc; }
+        .text-rose { color: #fb7185; }
+        .text-muted { color: #94a3b8; }
+        .text-dim { color: #64748b; }
+        .hidden { display: none !important; }
+
+        .bg-emerald { background: #059669; color: #fff; }
+        .bg-sky { background: #0284c7; color: #fff; }
+        .bg-indigo { background: #4f46e5; color: #fff; }
+        .bg-amber { background: #d97706; color: #fff; }
+        .bg-purple { background: #7e22ce; color: #fff; }
+        .bg-rose { background: #e11d48; color: #fff; }
+        .bg-slate { background: #334155; color: #cbd5e1; }
+
+        /* 顶部历法气象微型条与右侧子页签条 */
+        .weather-strip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
+            color: var(--text-muted);
+            background: rgba(8, 13, 24, 0.45);
+            border: 1px solid var(--border-dim);
+            border-radius: 3px;
+            padding: 2px 7px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+            cursor: pointer;
+        }
+        .weather-strip::-webkit-scrollbar { display: none; }
+
+        .subtab-bar {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 6px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border-dim);
+            overflow-x: auto;
+            white-space: nowrap;
+            flex-shrink: 0;
+            scrollbar-width: none;
+        }
+        .subtab-bar::-webkit-scrollbar { display: none; }
+
+        .subtab-btn {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 9px;
+            min-height: 26px;
+            border-radius: 3px;
+            border: 1px solid var(--border-dim);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            cursor: pointer;
+            flex-shrink: 0;
+            touch-action: manipulation;
+        }
+        .subtab-btn.active {
+            background: #1e3a5f;
+            border-color: #38bdf8;
+            color: #ffffff;
+        }
+
+        /* 亮色主题对比度适配 (light / gruvboxLight) */
+        body.theme-light-mode .pixel-box,
+        body.theme-light-mode .kpi-pill,
+        body.theme-light-mode .mission-banner,
+        body.theme-light-mode #left-res-section,
+        body.theme-light-mode .res-mini-card,
+        body.theme-light-mode .tab-bar,
+        body.theme-light-mode .tab-btn {
+            background-color: var(--bg-panel);
+            color: var(--text-main);
+        }
+        body.theme-light-mode .tab-btn.active,
+        body.theme-light-mode .subtab-btn.active {
+            background-color: #0284c7;
+            color: #ffffff;
+        }
+        body.theme-light-mode .subtab-btn {
+            background-color: #f1f5f9;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+        body.theme-light-mode .weather-strip {
+            background: #e2e8f0;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+        body.theme-light-mode .click-hint-badge {
+            color: #065f46;
+            background: rgba(16, 185, 129, 0.16);
+            border-color: #059669;
+        }
+        body.theme-light-mode #hdr-era-name,
+        body.theme-light-mode #hdr-mission-text,
+        body.theme-light-mode .res-mini-name,
+        body.theme-light-mode .era-lore-text {
+            color: var(--text-main) !important;
+        }
+        body.theme-light-mode .text-emerald { color: #047857; }
+        body.theme-light-mode .text-sky { color: #0369a1; }
+        body.theme-light-mode .text-amber { color: #b45309; }
+        body.theme-light-mode .text-purple { color: #7e22ce; }
+        body.theme-light-mode .text-rose { color: #be123c; }
+    </style>
+</head>
+<body>
+    <div id="app-shell">
+        <!-- 顶部全局状态与主线任务栏 -->
+        <header id="top-header" class="pixel-box">
+            <div class="header-row-top">
+                <div class="era-badge-wrap">
+                    <div id="hdr-era-icon" class="era-icon-box">🧬</div>
+                    <div>
+                        <div class="flex items-center gap-1">
+                            <span id="hdr-era-step" class="text-10 text-emerald font-bold">时代 1/7</span>
+                            <span id="hdr-city-title" class="text-10 text-amber font-bold hidden">[营地]</span>
+                            <span id="hdr-species-badge" class="text-10 text-sky font-bold hidden"></span>
+                        </div>
+                        <div id="hdr-era-name" class="font-bold" style="font-size: 15px; color: #f8fafc;">生命起源</div>
+                    </div>
+                </div>
+
+                <div class="kpi-strip">
+                    <div id="kpi-pop-box" class="kpi-pill hidden" title="点击跳转人口与内政">
+                        <span class="kpi-label">人口 / 士气</span>
+                        <span class="kpi-val text-sky"><span id="hdr-pop">2/5</span> <span id="hdr-happy" class="text-emerald">100%</span></span>
+                    </div>
+                    <div id="kpi-pill-1" class="kpi-pill" title="点击查看资源详情">
+                        <span id="hdr-kpi1-label" class="kpi-label">RNA</span>
+                        <span id="hdr-kpi1-val" class="kpi-val text-amber">0/100</span>
+                    </div>
+                    <div id="kpi-pill-2" class="kpi-pill" title="点击查看资源详情">
+                        <span id="hdr-kpi2-label" class="kpi-label">DNA</span>
+                        <span id="hdr-kpi2-val" class="kpi-val text-emerald">0/150</span>
+                    </div>
+                    <div id="kpi-pill-prestige" class="kpi-pill prestige-pill" title="点击查看质粒/余烬与核弹重置">
+                        <span class="kpi-label">🧬 质粒/余烬 <span id="hdr-shard-bonus" class="text-amber">+0%</span></span>
+                        <span id="hdr-shards" class="kpi-val text-purple">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="hdr-mission-banner" class="mission-banner" title="点击跳转到主线任务与转生列表">
+                <div class="min-w-0" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <span id="hdr-mission-id" class="text-amber font-bold">[M01]</span>
+                    <span id="hdr-mission-text" style="color: #e2e8f0;">首次采集：累计获得 RNA ≥ 10</span>
+                </div>
+                <span id="hdr-mission-prog" class="text-emerald font-bold shrink-0">0/51</span>
+            </div>
+
+            <div id="hdr-weather-strip" class="weather-strip" title="点击查看星球环境、天气与百科详情"></div>
+        </header>
+
+        <!-- 主工作区 -->
+        <div id="main-workspace">
+            <!-- 左侧：紧凑正方形像素舞台 + 加高全文明资源实时监控 + 双操作按钮 -->
+            <section id="left-pane" class="pixel-box">
+                <div class="stage-top-row">
+                    <div id="canvas-wrapper" title="点击或按空格键采集">
+                        <canvas id="pixel-canvas" width="64" height="64"></canvas>
+                        <div id="canvas-caption" class="canvas-caption">+RNA</div>
+                    </div>
+
+                    <div class="stage-info-col">
+                        <div id="btn-stage-hint" class="click-hint-badge">点击正方形 / [Space] 采集</div>
+                        <p id="stage-lore" class="era-lore-text">原始汤中涌动着有机分子。点击采集 RNA，建造细胞膜与细胞器，合成双螺旋并向智慧物种演化。</p>
+                        <div class="stage-meta-row" style="gap: 4px 6px; flex-wrap: wrap;">
+                            <span style="white-space: nowrap;">15FPS 节能</span>
+                            <span style="white-space: nowrap;">采集: <strong id="stat-clicks" class="text-sky">0</strong>次</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 左侧拉高完整全文明资源监控区 -->
+                <div id="left-res-section">
+                    <div class="res-section-hdr">
+                        <span>📊 全文明资源库存与净产率</span>
+                        <span id="left-res-count" class="text-10 text-muted">已解锁 2/26</span>
+                    </div>
+                    <div id="left-res-grid"></div>
+                </div>
+
+                <!-- 底部时代专属操作 & 时代晋升状态按钮 -->
+                <div class="left-action-bar">
+                    <button type="button" id="btn-era-action" class="pixel-btn action-main-btn bg-emerald">
+                        <span id="btn-era-action-title" class="text-xs font-bold">🧬 采集原初汤 (+2 RNA)</span>
+                        <span id="btn-era-action-sub" class="text-10" style="opacity: 0.9;">RNA: 0/100 | DNA: 0/150</span>
+                    </button>
+                    <button type="button" id="btn-next-era" class="pixel-btn action-main-btn bg-slate" disabled>
+                        <span id="btn-next-era-title" class="text-11 font-bold">下一时代: 农业文明</span>
+                        <span id="btn-next-era-sub" class="text-10 text-muted">需研究【智人诞生】</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 右侧：5 大独立功能标签页 -->
+            <section id="right-pane" class="pixel-box">
+                <nav class="tab-bar">
+                    <button type="button" class="tab-btn active" data-tab="evo">
+                        <span>🧬</span><span>进化/内政</span>
+                        <span id="badge-evo" class="tab-badge"></span>
+                    </button>
+                    <button type="button" class="tab-btn" data-tab="bld">
+                        <span>🏛️</span><span>建筑/工业</span>
+                        <span id="badge-bld" class="tab-badge"></span>
+                    </button>
+                    <button type="button" class="tab-btn" data-tab="tech">
+                        <span>🔬</span><span>科技研究</span>
+                        <span id="badge-tech" class="tab-badge"></span>
+                    </button>
+                    <button type="button" class="tab-btn" data-tab="prestige">
+                        <span>☢️</span><span>核爆/跃迁</span>
+                        <span id="badge-prestige" class="tab-badge"></span>
+                    </button>
+                    <button type="button" class="tab-btn" data-tab="sys">
+                        <span>📊</span><span>百科/设置</span>
+                    </button>
+                </nav>
+
+                <div id="subtab-bar" class="subtab-bar"></div>
+                <div id="tab-content"></div>
+            </section>
+        </div>
+    </div>
+
+    <!-- 提示条与自定义模态框（禁用 alert/confirm） -->
+    <div id="toast-bar">已保存进度</div>
+    <div id="modal-backdrop">
+        <div class="modal-card">
+            <div class="flex items-center justify-between">
+                <strong id="modal-title" class="text-sky" style="font-size: 14px;">系统提示</strong>
+                <button type="button" id="modal-close-x" class="pixel-btn bg-slate" style="padding: 2px 8px;">✕</button>
+            </div>
+            <div id="modal-body" class="text-xs text-muted"></div>
+            <textarea id="modal-textarea" class="modal-textarea hidden" placeholder="在此粘贴存档码..."></textarea>
+            <div id="modal-footer" class="flex justify-between gap-2"></div>
+        </div>
+    </div>
+
+    <!-- Evolve 增强数据与模块化引擎（支持 file:// 本地直开与 HTTP 环境） -->
+    <script src="data/evolve-bundle.js"></script>
+    <script src="js/data-loader.js"></script>
+    <script src="js/calendar-weather.js"></script>
+    <script src="js/economy-storage.js"></script>
+    <script src="js/diplomacy-military.js"></script>
+    <script src="js/arpa-genetics.js"></script>
+    <script src="js/events-achieves.js"></script>
+    <script src="js/evolve-bridge.js"></script>
+    <script src="js/evolve-ui.js"></script>
+    <script>
+        'use strict';
+
+        /* =====================================================================
+           1. 全量数值配置表（7时代 / 26资源 / 8进化 / 12职业 / 35建筑 / 44科技 / 51任务 / 7永久天赋）
+           ===================================================================== */
+        const ERAS_DEF = [
+            {
+                id: 'origin', index: 0, name: '生命起源', icon: '🧬', bgTop: '#081a24', bgBot: '#0f2f3d',
+                desc: '原始汤中涌动着有机分子。点击采集 RNA，合成生命的第一条双螺旋并向智慧演化。',
+                nextReqText: '研究【智人诞生】开启农业',
+                actionBtn: { title: '🧬 采集原初汤 (+2 RNA)', color: 'bg-emerald' }
+            },
+            {
+                id: 'agriculture', index: 1, name: '农业文明', icon: '🌾', bgTop: '#0f2314', bgBot: '#214d29',
+                desc: '智人定居点建立！分配农民、伐木工与学者，积累人口、住房与基础知识。',
+                nextReqText: '人口≥45 + 采矿&数学 + M17',
+                actionBtn: { title: '🪓 部落采集 (+木/石/知)', color: 'bg-emerald' }
+            },
+            {
+                id: 'city', index: 2, name: '城市文明', icon: '🏛️', bgTop: '#1e1b2e', bgBot: '#3b335c',
+                desc: '青铜与铁器冶炼开启，货币流通与矿产开采推动大型城邦崛起。',
+                nextReqText: '人口≥120 + 钢铁 + 大学≥1 + M26',
+                actionBtn: { title: '⛏️ 勘探与贸易 (+币/知/矿)', color: 'bg-indigo' }
+            },
+            {
+                id: 'industrial', index: 3, name: '工业文明', icon: '🏭', bgTop: '#241914', bgBot: '#473024',
+                desc: '蒸汽机与电网轰鸣，钢铁、水泥、石化与现代工厂重塑大地。',
+                nextReqText: '电子学 + 燃煤电厂≥1 + 余电≥10MW',
+                actionBtn: { title: '⚙️ 工业实验 (+知/币/钢)', color: 'bg-amber' }
+            },
+            {
+                id: 'atomic', index: 4, name: '原子时代', icon: '☢️', bgTop: '#10241c', bgBot: '#1b4534',
+                desc: '重核裂变释放出磅礴清洁电力，粒子物理叩响信息革命大门。',
+                nextReqText: '粒子物理 + 核电站≥1 + M37',
+                actionBtn: { title: '☢️ 核物理实验 (+知/铀)', color: 'bg-emerald' }
+            },
+            {
+                id: 'information', index: 5, name: '信息文明', icon: '💻', bgTop: '#0c1d33', bgBot: '#16355c',
+                desc: '半导体晶圆、微处理器与强人工智能带来指数级科研算力爆发。',
+                nextReqText: '人工智能 + 超级计算机≥1 + M43',
+                actionBtn: { title: '💻 算力超频 (+知/币/芯)', color: 'bg-sky' }
+            },
+            {
+                id: 'space', index: 6, name: '太空文明', icon: '🚀', bgTop: '#090b1a', bgBot: '#171c3b',
+                desc: '火箭刺破苍穹，月球氦-3聚变与火星殖民穹顶为恒星际方舟蓄力。',
+                nextReqText: '研究【星际航行】并建造殖民方舟',
+                actionBtn: { title: '🚀 深空补给 (+知/火箭部件)', color: 'bg-purple' }
+            }
+        ];
+
+        const RESOURCES_DEF = [
+            { id: 'rna', name: 'RNA', era: 0, baseCap: 100 },
+            { id: 'dna', name: 'DNA', era: 0, baseCap: 150 },
+            { id: 'food', name: '食物', era: 1, baseCap: 500 },
+            { id: 'lumber', name: '木材', era: 1, baseCap: 300 },
+            { id: 'stone', name: '石材', era: 1, baseCap: 200 },
+            { id: 'knowledge', name: '知识', era: 1, baseCap: 250 },
+            { id: 'money', name: '金币', era: 2, baseCap: 1000 },
+            { id: 'copper', name: '铜', era: 2, baseCap: 200 },
+            { id: 'iron', name: '铁', era: 2, baseCap: 200 },
+            { id: 'coal', name: '煤', era: 2, baseCap: 300 },
+            { id: 'plywood', name: '木板', era: 2, baseCap: 150 },
+            { id: 'brick', name: '砖', era: 2, baseCap: 150 },
+            { id: 'wroughtIron', name: '锻铁', era: 2, baseCap: 100 },
+            { id: 'steel', name: '钢材', era: 3, baseCap: 200 },
+            { id: 'cement', name: '水泥', era: 3, baseCap: 200 },
+            { id: 'oil', name: '石油', era: 3, baseCap: 500 },
+            { id: 'polymer', name: '聚合物', era: 3, baseCap: 200 },
+            { id: 'aluminium', name: '铝', era: 3, baseCap: 200 },
+            { id: 'uranium', name: '铀', era: 4, baseCap: 50 },
+            { id: 'electronics', name: '电子元件', era: 5, baseCap: 200 },
+            { id: 'wafer', name: '晶圆', era: 5, baseCap: 100 },
+            { id: 'microprocessor', name: '微处理器', era: 5, baseCap: 100 },
+            { id: 'rocketParts', name: '火箭部件', era: 6, baseCap: 50 },
+            { id: 'helium3', name: '氦-3', era: 6, baseCap: 100 },
+            { id: 'waterIce', name: '水冰', era: 6, baseCap: 200 },
+            { id: 'rareMineral', name: '稀有矿物', era: 6, baseCap: 100 }
+        ];
+
+        const RES_MAP = Object.fromEntries(RESOURCES_DEF.map(r => [r.id, r]));
+
+        /* 8 节点生命进化主链 */
+        const EVO_CHAIN_IDS = [
+            'evo_membrane', 'evo_organelle', 'evo_nucleus', 'evo_multicellular',
+            'evo_vertebrate', 'evo_mammal', 'evo_primate', 'evo_sapiens'
+        ];
+
+        /* 12 种职业 */
+        const JOBS_DEF = [
+            { id: 'farmer', name: '农民', era: 1, reqTech: null, out: { food: 1.0 }, desc: '食物 +1.0/s/人' },
+            { id: 'lumberjack', name: '伐木工', era: 1, reqTech: 'tools', out: { lumber: 0.8 }, desc: '木材 +0.8/s/人' },
+            { id: 'quarryWorker', name: '采石工', era: 1, reqTech: 'mining', out: { stone: 0.6 }, desc: '石材 +0.6/s/人' },
+            { id: 'scholar', name: '学者', era: 1, reqTech: 'writing', out: { knowledge: 0.35 }, desc: '知识 +0.35/s/人' },
+            { id: 'miner', name: '矿工', era: 2, reqTech: 'ironAge', out: { iron: 0.45, copper: 0.3 }, desc: '铁 +0.45/s, 铜 +0.3/s' },
+            { id: 'coalMiner', name: '煤矿工', era: 2, reqTech: 'advancedMining', out: { coal: 0.25 }, desc: '煤 +0.25/s/人' },
+            { id: 'craftsman', name: '工匠', era: 2, reqTech: 'smelting', inRes: { lumber: 0.3, stone: 0.3, iron: 0.15 }, out: { plywood: 0.2, brick: 0.2, wroughtIron: 0.1 }, desc: '加工木板/砖/锻铁 (耗木/石/铁)' },
+            { id: 'merchant', name: '商人', era: 2, reqTech: 'currency', out: { money: 0.5 }, desc: '金币 +0.5/s/人' },
+            { id: 'professor', name: '教授', era: 2, reqTech: 'currency', out: { knowledge: 1.0 }, desc: '知识 +1.0/s/人' },
+            { id: 'engineer', name: '工程师', era: 3, reqTech: 'electricity', out: { money: 0.8 }, desc: '金币 +0.8/s/人' },
+            { id: 'scientist', name: '科学家', era: 5, reqTech: 'computing', out: { knowledge: 3.0 }, desc: '知识 +3.0/s/人' },
+            { id: 'colonist', name: '太空殖民者', era: 6, reqTech: 'lunarColonization', out: { helium3: 0.2, waterIce: 0.3, rareMineral: 0.15 }, desc: '氦-3 +0.2, 水冰 +0.3, 稀矿 +0.15' }
+        ];
+
+        /* 35 种建筑（第1座成本、指数增长系数、前置科技与效果） */
+        const BUILDINGS_DEF = [
+            { id: 'primitiveHut', name: '简陋居所', era: 1, reqTech: 'evo_sapiens', growth: 1.13, baseCost: { lumber: 25, stone: 10 }, desc: '住房上限 +5/座' },
+            { id: 'farmland', name: '农田', era: 1, reqTech: 'agriculture', growth: 1.15, baseCost: { lumber: 20, stone: 15 }, desc: '农民产量线性 +20%/座' },
+            { id: 'lumberCamp', name: '伐木场', era: 1, reqTech: 'tools', growth: 1.15, baseCost: { lumber: 25, stone: 20 }, desc: '伐木工产量线性 +25%/座' },
+            { id: 'quarry', name: '采石场', era: 1, reqTech: 'mining', growth: 1.15, baseCost: { lumber: 30, stone: 30 }, desc: '采石工产量线性 +25%/座' },
+            { id: 'warehouse', name: '仓库', era: 1, reqTech: 'construction', growth: 1.13, baseCost: { lumber: 55, stone: 45 }, desc: '食物+200, 木材+150, 石材+150容量' },
+            { id: 'library', name: '图书馆', era: 1, reqTech: 'writing', growth: 1.18, baseCost: { lumber: 70, stone: 50, knowledge: 80 }, desc: '知识容量+250/座, 学者效率 +20%' },
+            { id: 'mine', name: '矿井', era: 2, reqTech: 'copperAge', growth: 1.18, baseCost: { lumber: 120, stone: 100, money: 50 }, desc: '铜+0.2/s, 铁+0.25/s (铝工业后铝+0.4/s)' },
+            { id: 'coalMine', name: '煤矿', era: 2, reqTech: 'advancedMining', growth: 1.18, baseCost: { lumber: 150, stone: 120, money: 90 }, desc: '煤 +0.3/s/座, 煤矿工 +10%' },
+            { id: 'smelter', name: '冶炼炉', era: 2, reqTech: 'smelting', growth: 1.18, baseCost: { lumber: 100, stone: 120, iron: 45 }, desc: '铁-0.7/s → 锻铁+0.35/s, 工匠 +15%' },
+            { id: 'foundry', name: '铸造工坊', era: 2, reqTech: 'smelting', growth: 1.18, baseCost: { lumber: 180, stone: 140, money: 180 }, desc: '木/石-0.6/s → 木板/砖+0.3/s' },
+            { id: 'market', name: '城市集市', era: 2, reqTech: 'currency', growth: 1.18, baseCost: { lumber: 100, stone: 90, money: 80 }, desc: '自动产出金币 +0.5/s/座' },
+            { id: 'bank', name: '银行', era: 2, reqTech: 'currency', growth: 1.18, baseCost: { lumber: 140, stone: 110, money: 180 }, desc: '金币容量 +10,000/座' },
+            { id: 'university', name: '大学', era: 2, reqTech: 'mathematics', growth: 1.18, baseCost: { brick: 75, plywood: 65, money: 250 }, desc: '知识容量+2000/座, 教授效率 +15%' },
+            { id: 'freightWarehouse', name: '货运仓库', era: 2, reqTech: 'construction', growth: 1.15, baseCost: { brick: 60, plywood: 60, money: 180 }, desc: '全部矿产/工业/太空容量 +300/座' },
+            { id: 'steelMill', name: '钢铁厂', era: 3, reqTech: 'steel', growth: 1.20, baseCost: { iron: 120, coal: 80, money: 600 }, desc: '铁-2, 煤-1 → 钢+1/s (耗电8MW)' },
+            { id: 'cementPlant', name: '水泥厂', era: 3, reqTech: 'industrialization', growth: 1.20, baseCost: { stone: 170, steel: 50, money: 500 }, desc: '石材-3 → 水泥+1/s (耗电5MW)' },
+            { id: 'coalPowerPlant', name: '燃煤电厂', era: 3, reqTech: 'electricity', growth: 1.20, baseCost: { iron: 140, coal: 100, money: 800 }, desc: '发电 +20MW/座 (满载煤-0.5/s)' },
+            { id: 'oilWell', name: '油井', era: 3, reqTech: 'petroleumIndustry', growth: 1.20, baseCost: { steel: 80, money: 900 }, desc: '石油 +1.0/s/座 (耗电3MW)' },
+            { id: 'refinery', name: '炼油厂', era: 3, reqTech: 'petroleumIndustry', growth: 1.20, baseCost: { steel: 100, cement: 100, money: 1200 }, desc: '石油-2 → 聚合物+1/s (耗电6MW)' },
+            { id: 'factory', name: '多功能工业厂房', era: 3, reqTech: 'industrialization', growth: 1.20, baseCost: { steel: 100, cement: 80, money: 1400 }, desc: '自动制造电子元件与火箭部件 (10MW)' },
+            { id: 'researchCenter', name: '工业研究中心', era: 3, reqTech: 'industrialization', growth: 1.20, baseCost: { steel: 80, cement: 75, money: 1000 }, desc: '知识+2/s, 知识容量+10,000 (耗电5MW)' },
+            { id: 'gridControl', name: '电网控制中心', era: 3, reqTech: 'electricity', growth: 1.20, baseCost: { steel: 110, cement: 90, money: 1500 }, desc: '降低全局电力负荷 5%/座 (上限20%)' },
+            { id: 'uraniumMine', name: '铀矿井', era: 4, reqTech: 'nuclearFission', growth: 1.24, baseCost: { steel: 110, cement: 80, electronics: 40, money: 1800 }, desc: '铀 +0.3/s/座 (耗电10MW)' },
+            { id: 'nuclearPowerPlant', name: '压水堆核电站', era: 4, reqTech: 'nuclearPower', growth: 1.24, baseCost: { steel: 150, cement: 130, uranium: 20, money: 2800 }, desc: '发电 +100MW/座 (满载铀-0.1/s)' },
+            { id: 'cleanRoom', name: '半导体无尘室', era: 5, reqTech: 'semiconductors', growth: 1.24, baseCost: { steel: 100, polymer: 120, electronics: 100, money: 4000 }, desc: '电子-1, 聚合物-2 → 晶圆+1/s (15MW)' },
+            { id: 'chipFab', name: '芯片光刻代工厂', era: 5, reqTech: 'microprocessors', growth: 1.24, baseCost: { steel: 120, polymer: 150, wafer: 80, money: 6500 }, desc: '晶圆-1, 铝-1 → 微处理器+1/s (20MW)' },
+            { id: 'datacenter', name: '大型云数据中心', era: 5, reqTech: 'computing', growth: 1.24, baseCost: { steel: 100, electronics: 120, wafer: 50, money: 8000 }, desc: '知识+10/s, 知识/金币容量+30,000 (25MW)' },
+            { id: 'supercomputer', name: 'AI超级计算机', era: 5, reqTech: 'artificialIntelligence', growth: 1.24, baseCost: { steel: 140, microprocessor: 80, money: 12000 }, desc: '工业配方×1.25, 知识/金币容量+100,000' },
+            { id: 'launchPad', name: '航天发射场', era: 6, reqTech: 'rocketry', growth: 1.28, baseCost: { steel: 120, cement: 120, electronics: 80, money: 15000 }, desc: '组装火箭部件 +0.6/s/座 (耗电15MW)' },
+            { id: 'satelliteNetwork', name: '近地卫星网络', era: 6, reqTech: 'spaceExploration', growth: 1.28, baseCost: { rocketParts: 25, electronics: 80, money: 22000 }, desc: '全局知识科研效率线性 +5%/座' },
+            { id: 'moonBase', name: '月球阿尔法基地', era: 6, reqTech: 'lunarColonization', growth: 1.30, baseCost: { rocketParts: 35, steel: 90, electronics: 70, money: 30000 }, desc: '水冰 +0.4/s/座, 支持月球开发' },
+            { id: 'helium3Harvester', name: '氦-3开采站', era: 6, reqTech: 'lunarColonization', growth: 1.30, baseCost: { rocketParts: 35, steel: 90, money: 35000 }, desc: '氦-3 +0.5/s/座 (耗电20MW)' },
+            { id: 'fusionPowerPlant', name: '受控核聚变电厂', era: 6, reqTech: 'fusionPower', growth: 1.30, baseCost: { steel: 140, electronics: 110, helium3: 30, money: 50000 }, desc: '发电 +500MW/座 (满载氦-3 -0.05/s)' },
+            { id: 'marsColony', name: '火星殖民穹顶', era: 6, reqTech: 'marsExploration', growth: 1.32, baseCost: { rocketParts: 45, steel: 110, microprocessor: 60, money: 60000 }, desc: '住房上限+25/座, 稀有矿物 +0.3/s/座' },
+            { id: 'colonyShip', name: '恒星际殖民方舟', era: 6, reqTech: 'interstellarTravel', growth: 1.32, maxCount: 1, baseCost: { rocketParts: 50, steel: 180, microprocessor: 90, helium3: 70, money: 120000 }, desc: '文明跃迁终极方舟 (限建1艘)' }
+        ];
+
+        /* 44 项一次性科技研究节点 */
+        const TECHS_DEF = [
+            // 1. 生命起源 (8)
+            { id: 'evo_membrane', name: '细胞膜', era: 0, req: [], cost: { rna: 10 }, desc: '解锁 DNA 手动合成 (2 RNA → 1 DNA)' },
+            { id: 'evo_organelle', name: '细胞器', era: 0, req: ['evo_membrane'], cost: { rna: 8, dna: 2 }, desc: '生命分子自动产率 +10%' },
+            { id: 'evo_nucleus', name: '细胞核', era: 0, req: ['evo_organelle'], cost: { rna: 10, dna: 4 }, desc: '生命产出 +15%，开启真核转录' },
+            { id: 'evo_multicellular', name: '多细胞', era: 0, req: ['evo_nucleus'], cost: { dna: 6 }, desc: '生命产出 +15%，组织分化' },
+            { id: 'evo_vertebrate', name: '脊椎动物', era: 0, req: ['evo_multicellular'], cost: { dna: 9 }, desc: '生命产出 +20%，神经中枢成型' },
+            { id: 'evo_mammal', name: '哺乳动物', era: 0, req: ['evo_vertebrate'], cost: { dna: 14 }, desc: '生命产出 +20%，恒温代谢' },
+            { id: 'evo_primate', name: '灵长类', era: 0, req: ['evo_mammal'], cost: { dna: 22 }, desc: '生命产出 +25%，工具使用萌芽' },
+            { id: 'evo_sapiens', name: '智人诞生', era: 0, req: ['evo_primate'], cost: { dna: 35 }, desc: '晋升【农业文明】，初始化人口与部落！' },
+
+            // 2. 农业文明 (6)
+            { id: 'tools', name: '工具制造', era: 1, req: ['evo_sapiens'], cost: { knowledge: 20, lumber: 20 }, desc: '解锁伐木工与伐木场，采集效率 +10%' },
+            { id: 'agriculture', name: '农业', era: 1, req: ['evo_sapiens'], cost: { knowledge: 35, food: 40 }, desc: '解锁农田建造，强化粮食供给' },
+            { id: 'construction', name: '建筑学', era: 1, req: ['tools'], cost: { knowledge: 55, lumber: 45, stone: 25 }, desc: '解锁仓库与货运仓库，住房容量 +10%' },
+            { id: 'mining', name: '采矿', era: 1, req: ['tools'], cost: { knowledge: 80, stone: 40 }, desc: '解锁采石工与采石场' },
+            { id: 'writing', name: '文字', era: 1, req: ['evo_sapiens'], cost: { knowledge: 75, food: 50 }, desc: '解锁学者与图书馆，知识产率 +10%' },
+            { id: 'mathematics', name: '数学', era: 1, req: ['writing'], cost: { knowledge: 140, lumber: 65 }, desc: '解锁大学，建筑成本永久 -3%' },
+
+            // 3. 城市文明 (7)
+            { id: 'copperAge', name: '铜器时代', era: 2, req: ['mining'], cost: { knowledge: 220, stone: 80 }, desc: '解锁矿井建造与铜矿采掘' },
+            { id: 'ironAge', name: '铁器时代', era: 2, req: ['copperAge'], cost: { knowledge: 320, stone: 80 }, desc: '解锁矿工职业（产铁与铜）' },
+            { id: 'currency', name: '货币', era: 2, req: ['writing'], cost: { knowledge: 280, food: 150 }, desc: '解锁商人、教授、集市与银行' },
+            { id: 'trade', name: '贸易', era: 2, req: ['currency'], cost: { knowledge: 450, money: 250 }, desc: '金币产出 +20%' },
+            { id: 'smelting', name: '冶炼', era: 2, req: ['ironAge'], cost: { knowledge: 500, iron: 80, stone: 100 }, desc: '解锁工匠、冶炼炉与铸造工坊' },
+            { id: 'advancedMining', name: '高级采矿', era: 2, req: ['smelting'], cost: { knowledge: 800, money: 350, iron: 80 }, desc: '解锁煤矿工与煤矿' },
+            { id: 'steel', name: '钢铁', era: 2, req: ['advancedMining'], cost: { knowledge: 1200, money: 550, wroughtIron: 80 }, desc: '解锁钢铁厂，工业文明核心前置' },
+
+            // 4. 工业文明 (8)
+            { id: 'mechanicalEngineering', name: '机械工程', era: 3, req: ['steel'], cost: { knowledge: 1700, money: 850, iron: 180 }, desc: '工业设施配方产出 +15%' },
+            { id: 'industrialization', name: '工业化', era: 3, req: ['mechanicalEngineering'], cost: { knowledge: 2500, money: 1200, steel: 80 }, desc: '解锁水泥厂、工厂与工业研究中心' },
+            { id: 'electricity', name: '电力', era: 3, req: ['mechanicalEngineering'], cost: { knowledge: 2100, money: 900, coal: 100 }, desc: '解锁燃煤电厂、电网控制与工程师' },
+            { id: 'chemicalIndustry', name: '化学工业', era: 3, req: ['industrialization'], cost: { knowledge: 3500, money: 1400, steel: 100 }, desc: '解锁聚合物化工体系' },
+            { id: 'petroleumIndustry', name: '石油工业', era: 3, req: ['chemicalIndustry'], cost: { knowledge: 4200, money: 2100, steel: 120 }, desc: '解锁油井与炼油厂' },
+            { id: 'aluminiumIndustry', name: '铝工业', era: 3, req: ['petroleumIndustry'], cost: { knowledge: 5000, money: 2300, steel: 150 }, desc: '矿井解锁铝矿伴生采掘 (+0.4/s/座)' },
+            { id: 'electricalEngineering', name: '电气工程', era: 3, req: ['electricity'], cost: { knowledge: 4400, money: 2000, steel: 90 }, desc: '全局发电有效功率 +15%' },
+            { id: 'electronics', name: '电子学', era: 3, req: ['aluminiumIndustry', 'electricalEngineering'], cost: { knowledge: 6500, money: 3000, polymer: 100 }, desc: '解锁工厂电子元件自动化制造' },
+
+            // 5. 原子时代 (4)
+            { id: 'nuclearFission', name: '核裂变', era: 4, req: ['electronics'], cost: { knowledge: 9000, money: 4000, electronics: 80 }, desc: '解锁铀矿井与核能前置' },
+            { id: 'nuclearPower', name: '核电工程', era: 4, req: ['nuclearFission'], cost: { knowledge: 11500, money: 5800, uranium: 20, steel: 120 }, desc: '解锁压水堆核电站 (100MW/座)' },
+            { id: 'radioChemistry', name: '放射化学', era: 4, req: ['nuclearFission'], cost: { knowledge: 11000, money: 4300, uranium: 15 }, desc: '铀矿采掘效率 +20%' },
+            { id: 'particlePhysics', name: '粒子物理', era: 4, req: ['nuclearPower', 'radioChemistry'], cost: { knowledge: 16500, money: 7000, electronics: 120 }, desc: '知识科研效率 +20%，信息文明前置' },
+
+            // 6. 信息文明 (5)
+            { id: 'semiconductors', name: '半导体', era: 5, req: ['particlePhysics'], cost: { knowledge: 21000, money: 9500, electronics: 140 }, desc: '解锁半导体无尘室与晶圆制造' },
+            { id: 'computing', name: '计算机', era: 5, req: ['semiconductors'], cost: { knowledge: 27000, money: 12500, wafer: 75 }, desc: '解锁科学家与大型云数据中心' },
+            { id: 'microprocessors', name: '微处理器', era: 5, req: ['computing'], cost: { knowledge: 36000, money: 16000, wafer: 90 }, desc: '解锁芯片光刻代工厂' },
+            { id: 'internet', name: '互联网', era: 5, req: ['computing'], cost: { knowledge: 42000, money: 19000, microprocessor: 60 }, desc: '知识与金币全局效率 +20%' },
+            { id: 'artificialIntelligence', name: '人工智能', era: 5, req: ['microprocessors', 'internet'], cost: { knowledge: 55000, money: 22000, microprocessor: 90 }, desc: '解锁AI超级计算机，工业配方 ×1.25' },
+
+            // 7. 太空文明 (6)
+            { id: 'rocketry', name: '火箭工程', era: 6, req: ['artificialIntelligence'], cost: { knowledge: 70000, money: 35000, steel: 180, electronics: 100 }, desc: '解锁航天发射场与火箭部件量产' },
+            { id: 'spaceExploration', name: '太空探索', era: 6, req: ['rocketry'], cost: { knowledge: 90000, money: 45000, rocketParts: 30 }, desc: '解锁近地卫星网络' },
+            { id: 'lunarColonization', name: '月球殖民', era: 6, req: ['spaceExploration'], cost: { knowledge: 120000, money: 60000, rocketParts: 40 }, desc: '解锁太空殖民者、月球基地与氦-3开采' },
+            { id: 'fusionPower', name: '核聚变', era: 6, req: ['lunarColonization'], cost: { knowledge: 145000, money: 75000, helium3: 40 }, desc: '解锁受控核聚变电厂 (500MW/座)' },
+            { id: 'marsExploration', name: '火星探索', era: 6, req: ['lunarColonization'], cost: { knowledge: 190000, money: 100000, rocketParts: 50, helium3: 50 }, desc: '解锁火星殖民穹顶与稀有矿物' },
+            { id: 'interstellarTravel', name: '星际航行', era: 6, req: ['marsExploration', 'fusionPower'], cost: { knowledge: 280000, money: 140000, rocketParts: 80, microprocessor: 90 }, desc: '解锁恒星际殖民方舟与终极跃迁' }
+        ];
+
+        const TECH_MAP = Object.fromEntries(TECHS_DEF.map(t => [t.id, t]));
+
+        /* 51 项顺序主线任务（已按流畅节奏重调人口阈值并支持读档自动追溯） */
+        const MISSIONS_DEF = [
+            { id: 'M01', era: 'origin', name: '首次采集', desc: '累计获得 RNA ≥ 10', check: s => (s.res.rna || 0) >= 10, rewardText: 'RNA +5', reward: { res: { rna: 5 } } },
+            { id: 'M02', era: 'origin', name: '第一次合成', desc: '研究【细胞膜】并合成 DNA ≥ 2', check: s => !!s.techs.evo_membrane && (s.res.dna || 0) >= 2, rewardText: 'DNA +2', reward: { res: { dna: 2 } } },
+            { id: 'M03', era: 'origin', name: '形成细胞核', desc: '研究进化节点【细胞核】', check: s => !!s.techs.evo_nucleus, rewardText: 'DNA +3', reward: { res: { dna: 3 } } },
+            { id: 'M04', era: 'origin', name: '多细胞生命', desc: '研究进化节点【多细胞】', check: s => !!s.techs.evo_multicellular, rewardText: 'DNA +4', reward: { res: { dna: 4 } } },
+            { id: 'M05', era: 'origin', name: '哺乳动物', desc: '研究进化节点【哺乳动物】', check: s => !!s.techs.evo_mammal, rewardText: 'DNA +6', reward: { res: { dna: 6 } } },
+            { id: 'M06', era: 'origin', name: '灵长动物', desc: '研究进化节点【灵长类】', check: s => !!s.techs.evo_primate, rewardText: 'DNA +10', reward: { res: { dna: 10 } } },
+            { id: 'M07', era: 'origin', name: '智人诞生', desc: '研究【智人诞生】开启农业文明', check: s => !!s.techs.evo_sapiens, rewardText: '开启农业文明', reward: {} },
+
+            { id: 'M08', era: 'agriculture', name: '建立定居点', desc: '拥有简陋居所 ≥ 1', check: s => (s.buildings.primitiveHut || 0) >= 1, rewardText: '食物 +30, 木材 +20', reward: { res: { food: 30, lumber: 20 } } },
+            { id: 'M09', era: 'agriculture', name: '稳定食物', desc: '分配农民 ≥ 2', check: s => (s.jobs.farmer || 0) >= 2, rewardText: '木材 +25, 知识 +15', reward: { res: { lumber: 25, knowledge: 15 } } },
+            { id: 'M10', era: 'agriculture', name: '初始部落', desc: '总人口 ≥ 10', check: s => s.pop >= 10, rewardText: '食物 +60, 木材 +40', reward: { res: { food: 60, lumber: 40 } } },
+            { id: 'M11', era: 'agriculture', name: '林业生产', desc: '建造伐木场 ≥ 1', check: s => (s.buildings.lumberCamp || 0) >= 1, rewardText: '木材 +50, 石材 +30', reward: { res: { lumber: 50, stone: 30 } } },
+            { id: 'M12', era: 'agriculture', name: '掌握石材', desc: '石材库存 ≥ 30', check: s => (s.res.stone || 0) >= 30, rewardText: '知识 +40', reward: { res: { knowledge: 40 } } },
+            { id: 'M13', era: 'agriculture', name: '采石基础', desc: '建造采石场 ≥ 1', check: s => (s.buildings.quarry || 0) >= 1, rewardText: '石材 +60, 知识 +40', reward: { res: { stone: 60, knowledge: 40 } } },
+            { id: 'M14', era: 'agriculture', name: '知识储备', desc: '建造图书馆 ≥ 1', check: s => (s.buildings.library || 0) >= 1, rewardText: '知识 +80', reward: { res: { knowledge: 80 } } },
+            { id: 'M15', era: 'agriculture', name: '职业分工', desc: '分配学者 ≥ 1', check: s => (s.jobs.scholar || 0) >= 1, rewardText: '知识 +60', reward: { res: { knowledge: 60 } } },
+            { id: 'M16', era: 'agriculture', name: '繁荣聚落', desc: '总人口 ≥ 25', check: s => s.pop >= 25, rewardText: '食物 +150, 知识 +100', reward: { res: { food: 150, knowledge: 100 } } },
+            { id: 'M17', era: 'agriculture', name: '掌握采矿', desc: '研究【采矿】与【数学】', check: s => !!s.techs.mining && !!s.techs.mathematics, rewardText: '石材 +100, 知识 +120', reward: { res: { stone: 100, knowledge: 120 } } },
+            { id: 'M18', era: 'agriculture', name: '农业时代完成', desc: '总人口 ≥ 45 (晋升城市文明)', check: s => s.pop >= 45, rewardText: '金币 +200', reward: { res: { money: 200 } } },
+
+            { id: 'M19', era: 'city', name: '首次开采铜矿', desc: '研究【铁器时代】、矿井≥1 且 铜≥20', check: s => !!s.techs.ironAge && (s.buildings.mine || 0) >= 1 && (s.res.copper || 0) >= 20, rewardText: '铜 +30, 铁 +20', reward: { res: { copper: 30, iron: 20 } } },
+            { id: 'M20', era: 'city', name: '获得铁矿', desc: '分配矿工 ≥ 1 且 铁库存 ≥ 20', check: s => (s.jobs.miner || 0) >= 1 && (s.res.iron || 0) >= 20, rewardText: '铁 +40', reward: { res: { iron: 40 } } },
+            { id: 'M21', era: 'city', name: '发展采矿', desc: '拥有矿井 ≥ 2', check: s => (s.buildings.mine || 0) >= 2, rewardText: '金币 +250', reward: { res: { money: 250 } } },
+            { id: 'M22', era: 'city', name: '煤炭发现', desc: '研究【高级采矿】且 煤矿 ≥ 1', check: s => !!s.techs.advancedMining && (s.buildings.coalMine || 0) >= 1, rewardText: '煤 +60', reward: { res: { coal: 60 } } },
+            { id: 'M23', era: 'city', name: '贸易开端', desc: '研究【货币】且 城市集市 ≥ 1', check: s => !!s.techs.currency && (s.buildings.market || 0) >= 1, rewardText: '金币 +300', reward: { res: { money: 300 } } },
+            { id: 'M24', era: 'city', name: '累积财富', desc: '金币库存 ≥ 200', check: s => (s.res.money || 0) >= 200, rewardText: '知识 +200', reward: { res: { knowledge: 200 } } },
+            { id: 'M25', era: 'city', name: '建立工坊', desc: '研究【冶炼】且 铸造工坊 ≥ 1', check: s => !!s.techs.smelting && (s.buildings.foundry || 0) >= 1, rewardText: '木板 +30, 砖 +30, 锻铁 +20', reward: { res: { plywood: 30, brick: 30, wroughtIron: 20 } } },
+            { id: 'M26', era: 'city', name: '钢铁技术', desc: '研究科技【钢铁】', check: s => !!s.techs.steel, rewardText: '铁 +100, 煤 +80', reward: { res: { iron: 100, coal: 80 } } },
+            { id: 'M27', era: 'city', name: '现代城市', desc: '总人口 ≥ 120 且 大学 ≥ 1 (晋升工业文明)', check: s => s.pop >= 120 && (s.buildings.university || 0) >= 1, rewardText: '金币 +800, 知识 +500', reward: { res: { money: 800, knowledge: 500 } } },
+
+            { id: 'M28', era: 'industrial', name: '第一座电厂', desc: '建造燃煤电厂 ≥ 1', check: s => (s.buildings.coalPowerPlant || 0) >= 1, rewardText: '煤 +120, 金币 +600', reward: { res: { coal: 120, money: 600 } } },
+            { id: 'M29', era: 'industrial', name: '稳定电网', desc: '电网电力余量 ≥ +10 MW', check: () => metrics.powerSurplus >= 10, rewardText: '知识 +800', reward: { res: { knowledge: 800 } } },
+            { id: 'M30', era: 'industrial', name: '钢铁生产', desc: '钢铁厂 ≥ 1 且 钢材库存 ≥ 20', check: s => (s.buildings.steelMill || 0) >= 1 && (s.res.steel || 0) >= 20, rewardText: '钢材 +40', reward: { res: { steel: 40 } } },
+            { id: 'M31', era: 'industrial', name: '工厂体系', desc: '建造多功能工业厂房 ≥ 1', check: s => (s.buildings.factory || 0) >= 1, rewardText: '水泥 +40, 钢材 +40', reward: { res: { cement: 40, steel: 40 } } },
+            { id: 'M32', era: 'industrial', name: '化工材料', desc: '聚合物库存 ≥ 30', check: s => (s.res.polymer || 0) >= 30, rewardText: '石油 +100, 聚合物 +25', reward: { res: { oil: 100, polymer: 25 } } },
+            { id: 'M33', era: 'industrial', name: '工业研究', desc: '建造工业研究中心 ≥ 1', check: s => (s.buildings.researchCenter || 0) >= 1, rewardText: '知识 +1500', reward: { res: { knowledge: 1500 } } },
+            { id: 'M34', era: 'industrial', name: '铝工业', desc: '研究【铝工业】且 铝库存 ≥ 30', check: s => !!s.techs.aluminiumIndustry && (s.res.aluminium || 0) >= 30, rewardText: '铝 +40', reward: { res: { aluminium: 40 } } },
+            { id: 'M35', era: 'industrial', name: '工业巅峰', desc: '研究【电子学】且 余电 ≥ 10MW (晋升原子时代)', check: s => !!s.techs.electronics && metrics.powerSurplus >= 10, rewardText: '电子元件 +30, 金币 +2000', reward: { res: { electronics: 30, money: 2000 } } },
+
+            { id: 'M36', era: 'atomic', name: '发现铀', desc: '铀库存 ≥ 10', check: s => (s.res.uranium || 0) >= 10, rewardText: '铀 +15', reward: { res: { uranium: 15 } } },
+            { id: 'M37', era: 'atomic', name: '原子能源', desc: '研究【核电工程】且 压水堆核电站 ≥ 1', check: s => !!s.techs.nuclearPower && (s.buildings.nuclearPowerPlant || 0) >= 1, rewardText: '知识 +3000, 钢材 +80', reward: { res: { knowledge: 3000, steel: 80 } } },
+            { id: 'M38', era: 'atomic', name: '粒子物理', desc: '研究【粒子物理】 (晋升信息文明)', check: s => !!s.techs.particlePhysics, rewardText: '电子元件 +50, 知识 +4000', reward: { res: { electronics: 50, knowledge: 4000 } } },
+
+            { id: 'M39', era: 'information', name: '净化无尘室', desc: '建造半导体无尘室 ≥ 1', check: s => (s.buildings.cleanRoom || 0) >= 1, rewardText: '聚合物 +80, 电子元件 +40', reward: { res: { polymer: 80, electronics: 40 } } },
+            { id: 'M40', era: 'information', name: '晶圆生产', desc: '晶圆库存 ≥ 20', check: s => (s.res.wafer || 0) >= 20, rewardText: '晶圆 +25', reward: { res: { wafer: 25 } } },
+            { id: 'M41', era: 'information', name: '计算时代', desc: '研究科技【计算机】', check: s => !!s.techs.computing, rewardText: '知识 +8000, 金币 +5000', reward: { res: { knowledge: 8000, money: 5000 } } },
+            { id: 'M42', era: 'information', name: '代工芯片', desc: '建造芯片光刻代工厂 ≥ 1', check: s => (s.buildings.chipFab || 0) >= 1, rewardText: '晶圆 +30, 铝 +50', reward: { res: { wafer: 30, aluminium: 50 } } },
+            { id: 'M43', era: 'information', name: '微处理器量产', desc: '微处理器库存 ≥ 20', check: s => (s.res.microprocessor || 0) >= 20, rewardText: '微处理器 +25', reward: { res: { microprocessor: 25 } } },
+            { id: 'M44', era: 'information', name: '强人工智能', desc: '研究【人工智能】且 AI超算 ≥ 1 (晋升太空文明)', check: s => !!s.techs.artificialIntelligence && (s.buildings.supercomputer || 0) >= 1, rewardText: '知识 +20000, 金币 +15000', reward: { res: { knowledge: 20000, money: 15000 } } },
+
+            { id: 'M45', era: 'space', name: '航天基础', desc: '建造航天发射场 ≥ 1', check: s => (s.buildings.launchPad || 0) >= 1, rewardText: '钢材 +100, 电子元件 +60', reward: { res: { steel: 100, electronics: 60 } } },
+            { id: 'M46', era: 'space', name: '火箭部件', desc: '火箭部件库存 ≥ 20', check: s => (s.res.rocketParts || 0) >= 20, rewardText: '火箭部件 +15', reward: { res: { rocketParts: 15 } } },
+            { id: 'M47', era: 'space', name: '近地卫星', desc: '建造近地卫星网络 ≥ 1', check: s => (s.buildings.satelliteNetwork || 0) >= 1, rewardText: '知识 +35000', reward: { res: { knowledge: 35000 } } },
+            { id: 'M48', era: 'space', name: '月球基地', desc: '建造月球阿尔法基地 ≥ 1', check: s => (s.buildings.moonBase || 0) >= 1, rewardText: '火箭部件 +20, 水冰 +40', reward: { res: { rocketParts: 20, waterIce: 40 } } },
+            { id: 'M49', era: 'space', name: '获得氦-3', desc: '氦-3库存 ≥ 20', check: s => (s.res.helium3 || 0) >= 20, rewardText: '氦-3 +25', reward: { res: { helium3: 25 } } },
+            { id: 'M50', era: 'space', name: '火星拓殖', desc: '建造火星殖民穹顶 ≥ 1', check: s => (s.buildings.marsColony || 0) >= 1, rewardText: '微处理器 +40, 氦-3 +30', reward: { res: { microprocessor: 40, helium3: 30 } } },
+            { id: 'M51', era: 'space', name: '发射殖民方舟', desc: '研究【星际航行】并建造恒星际殖民方舟', check: s => !!s.techs.interstellarTravel && (s.buildings.colonyShip || 0) >= 1, rewardText: '解锁文明跃迁！', reward: {} }
+        ];
+
+        /* 7 类永久天赋 × 5 个等级 */
+        const PERKS_DEF = [
+            { id: 'agriculturalRevolution', name: '农业革命', icon: '🌾', desc: '食物生产 +5%/级', costs: [2, 4, 7, 11, 16] },
+            { id: 'industrialRevolution', name: '工业革命', icon: '⚙️', desc: '工业配方产量 +5%/级', costs: [3, 5, 9, 14, 20] },
+            { id: 'scientificRevolution', name: '科学革命', icon: '🔬', desc: '知识产出 +6%/级', costs: [3, 6, 10, 15, 22] },
+            { id: 'populationBonus', name: '人口红利', icon: '👥', desc: '人口增长率 +5%/级', costs: [2, 5, 8, 13, 19] },
+            { id: 'efficientEnergy', name: '高效能源', icon: '⚡', desc: '发电有效功率 +4%/级', costs: [3, 5, 9, 14, 20] },
+            { id: 'automation', name: '自动化', icon: '🤖', desc: '自动分配空闲农民 & 基础采集 +10%/级', costs: [5, 8, 12, 18, 26] },
+            { id: 'deepHibernation', name: '深度休眠', icon: '💤', desc: '离线收益上限提升至 12/18/24/36/48 小时', costs: [3, 6, 10, 16, 24] }
+        ];
+
+        /* =====================================================================
+           2. 存档结构与初始化（融合《进化 Evolve》v1.4.10 核心机制与中文本地化）
+           ===================================================================== */
+
+        /* 2A. 源自 main.js (d.evolution) 与 strings.zh-CN.json 的 5 大细胞亚结构（可重复建造） */
+        const EVOLVE_CELL_STRUCTURES_DEF = [
+            {
+                id: 'membrane', name: '细胞膜', reqEvo: null,
+                baseRna: 2, incRna: 2, baseDna: 0, incDna: 0,
+                desc: '将细胞内部组件包裹并同外部隔离的生物膜。每级增加 RNA 上限 +5（每个线粒体额外使其 +5）。'
+            },
+            {
+                id: 'organelles', name: '细胞器', reqEvo: 'evo_membrane',
+                baseRna: 12, incRna: 8, baseDna: 4, incDna: 4,
+                desc: '细胞内部具有特定功能的亚结构。自动自我复制产生 RNA +1/s（研究【细胞器/有性繁殖】后翻倍至 +2/s）。'
+            },
+            {
+                id: 'nucleus', name: '细胞核', reqEvo: 'evo_organelle',
+                baseRna: 38, incRna: 32, incRnaMulti: 16, baseDna: 18, incDna: 16, incDnaMulti: 12,
+                desc: '真核细胞内含有遗传物质的核心结构。每秒自动将 2 RNA 转录合成为 1 DNA（脊椎/对称演化后翻倍至 2 DNA/s）。'
+            },
+            {
+                id: 'eukaryotic_cell', name: '真核细胞', reqEvo: 'evo_nucleus',
+                baseRna: 20, incRna: 20, baseDna: 40, incDna: 12,
+                desc: '具有完整细胞核与复杂内膜系统的细胞。每级增加 DNA 上限 +10（每个线粒体额外使其 +10）。'
+            },
+            {
+                id: 'mitochondria', name: '线粒体', reqEvo: 'evo_multicellular',
+                baseRna: 75, incRna: 50, baseDna: 65, incDna: 35,
+                desc: '细胞的动力工厂！每座线粒体使每级【细胞膜】额外 +5 RNA 上限，每级【真核细胞】额外 +10 DNA 上限。'
+            }
+        ];
+
+        /* 2B. 源自 main.js & strings.zh-CN.json 的三大生命演化界（Kingdom）与五大先天智慧物种（Species） */
+        const EVOLVE_KINGDOMS_DEF = [
+            { id: 'animal', name: '动物界·细胞吞噬', icon: '🐾', trait: '捕食本能', desc: '吞噬营养物质，采集效率 +25%，猎人/驻军产出 +25%' },
+            { id: 'plant', name: '植物界·叶绿体', icon: '🌿', trait: '光合自养', desc: '转化阳光，市民食物消耗永久 -25%，木材产率 +20%' },
+            { id: 'fungi', name: '真菌界·几丁质', icon: '🍄', trait: '外骨骼与菌丝', desc: '坚韧细胞壁，石材与全矿产产率 +20%，建筑成本 -4%' }
+        ];
+
+        const EVOLVE_SPECIES_DEF = [
+            { id: 'human', name: '人类 (Human)', icon: '🧑', trait: '适应力 / 野心', desc: '全能智慧物种：科技研究知识消耗 -5%，全局知识产出 +12%' },
+            { id: 'elf', name: '精灵 (Elf)', icon: '🧝', trait: '森林亲和', desc: '优雅林地种族：木材产出 +30%，学者与教授科研效率 +15%' },
+            { id: 'dwarf', name: '矮人 (Dwarf)', icon: '🧔', trait: '锻造大师', desc: '地下工匠种族：采石、矿工与工匠锻造产出 +25%，建筑造价 -5%' },
+            { id: 'orc', name: '兽人 (Orc)', icon: '👹', trait: '好战狂热', desc: '荒原强悍氏族：军营战利品与基础采集 +30%，初始人口增长 +20%' },
+            { id: 'ent', name: '树人 (Ent)', icon: '🌳', trait: '活体森林', desc: '远古植物智慧：木材产率 +40%，农田产量 +20%，士气下限提升' }
+        ];
+
+        /* 2C. 源自 strings.zh-CN.json (tab_city1 ~ tab_city8) 的 8 级动态城市头衔 */
+        const EVOLVE_CITY_TITLES = [
+            { maxPop: 5, name: '营地' },
+            { maxPop: 20, name: '村庄' },
+            { maxPop: 75, name: '村镇' },
+            { maxPop: 250, name: '市镇' },
+            { maxPop: 600, name: '城市' },
+            { maxPop: 1200, name: '大城市' },
+            { maxPop: 2500, name: '城市群' },
+            { maxPop: Infinity, name: '联合城市群' }
+        ];
+
+        /* 2D. 源自 main.js & strings.zh-CN.json 的政体系统（Government） */
+        const EVOLVE_GOV_DEF = [
+            { id: 'anarchy', name: '部落自治', era: 1, reqTech: null, desc: '原始氏族自治，无特殊加成或惩罚' },
+            { id: 'autocracy', name: '独裁政府', era: 2, reqTech: 'currency', desc: '铁腕统治：军营与重工业配方产出 +18%，全局士气 -8%' },
+            { id: 'democracy', name: '民主政府', era: 2, reqTech: 'currency', desc: '自由议会：全局士气 +15%，学者/教授/科学家与贸易产出 +12%' },
+            { id: 'oligarchy', name: '寡头政府', era: 2, reqTech: 'trade', desc: '财阀议政：市民税收金币 +30%，集市与银行效率 +20%' },
+            { id: 'technocracy', name: '技术官僚', era: 3, reqTech: 'industrialization', desc: '专家治国：科技研究知识消耗 -8%，全局科研效率 +20%' },
+            { id: 'socialist', name: '社会主义', era: 3, reqTech: 'industrialization', desc: '计划协同：工匠加工与全矿产产出 +22%，市民士气 +5%' },
+            { id: 'federation', name: '银河联邦', era: 6, reqTech: 'spaceExploration', desc: '星际大同：全文明所有资源产出 +25%，全局士气 +15%' }
+        ];
+
+        /* 2E. 源自 main.js (d.city) & strings.zh-CN.json 的《进化 Evolve》特色扩展建筑 */
+        const EVOLVE_EXTRA_BLDS_DEF = [
+            {
+                id: 'cottage', name: '茅屋', era: 2, reqTech: 'smelting', growth: 1.15,
+                baseCost: { money: 300, plywood: 25, brick: 20, wroughtIron: 15 },
+                desc: '舒适的砖木结构住宅，住房上限 +3/座，全局士气 +1%/座。'
+            },
+            {
+                id: 'garrison', name: '军营', era: 2, reqTech: 'ironAge', growth: 1.25,
+                baseCost: { money: 240, stone: 160, wroughtIron: 10 },
+                desc: '训练驻军士兵守卫城邦并外出狩猎：每座自动产出食物 +1.2/s、金币战利品 +0.8/s，提升核威慑评级。'
+            },
+            {
+                id: 'amphitheatre', name: '圆形剧场', era: 2, reqTech: 'currency', growth: 1.22,
+                baseCost: { money: 350, stone: 200, lumber: 150 },
+                desc: '用戏剧和竞技场娱乐公民，减少高税率不满，每座提升全局士气 +4%、知识 +0.5/s。'
+            },
+            {
+                id: 'apartment', name: '现代公寓', era: 3, reqTech: 'industrialization', growth: 1.22,
+                baseCost: { money: 1500, cement: 80, steel: 65 },
+                desc: '高密度现代化住宅楼（耗电 1MW/座），每座提供住房上限 +6。'
+            },
+            {
+                id: 'wardenclyffe', name: '沃登克里弗塔', era: 3, reqTech: 'electricity', growth: 1.22,
+                baseCost: { money: 2200, copper: 120, cement: 90, steel: 60 },
+                desc: '特斯拉无线电能与科学实验高塔（耗电 2MW/座），知识产出 +4.5/s，知识上限 +2,500/座。'
+            },
+            {
+                id: 'biolab', name: '生命科学实验室', era: 4, reqTech: 'nuclearFission', growth: 1.25,
+                baseCost: { money: 6000, steel: 110, polymer: 80, electronics: 45 },
+                desc: '基因测序与分子生物学研究中心（耗电 2MW/座），知识产出 +12/s，知识上限 +5,000/座。'
+            },
+            {
+                id: 'missile_silo', name: '导弹发射井', era: 4, reqTech: 'nuclearFission', growth: 1.30,
+                baseCost: { money: 8500, cement: 140, steel: 130, uranium: 15, oil: 120 },
+                desc: '战略核反击发射阵列！建成至少 1 座后，可在【核爆/跃迁】面板解锁【☢️ 相互保证毁灭 (MAD)】核弹重置！'
+            }
+        ];
+
+        const SAVE_KEY = 'pixel_human_era_save_v3';
+
+        function createInitialWorld() {
+            const res = {};
+            const unlockedRes = {};
+            RESOURCES_DEF.forEach(r => {
+                res[r.id] = 0;
+                unlockedRes[r.id] = r.era === 0;
+            });
+            return {
+                eraIndex: 0,
+                res,
+                unlockedRes,
+                pop: 0,
+                popAccum: 0,
+                happiness: 100,
+                jobs: {},
+                buildings: {},
+                techs: {},
+                missionIndex: 0,
+                clicks: 0,
+                // Evolve 增强状态（自动向后兼容）
+                evoCells: {
+                    membrane: 0,
+                    organelles: 0,
+                    nucleus: 0,
+                    eukaryotic_cell: 0,
+                    mitochondria: 0
+                },
+                kingdom: 'animal',
+                species: 'human',
+                gov: 'anarchy',
+                taxRate: 20,
+                smelterMode: 'coal', // 'wood' | 'coal' | 'oil'
+                craftFocus: 'balanced', // 'balanced' | 'plywood' | 'brick' | 'wroughtIron'
+                extraBlds: {},
+                madArmed: false
+            };
+        }
+
+        const DEFAULT_SAVE = {
+            version: 3,
+            lastActiveAt: Date.now(),
+            prestige: {
+                count: 0,
+                madCount: 0,
+                arkCount: 0,
+                genesisShards: 0,
+                lifetimeShards: 0,
+                phage: 0,
+                rapidMutation: false,
+                ancientRuins: false,
+                perks: {}
+            },
+            settings: {
+                sound: true,
+                crt: false
+            },
+            world: createInitialWorld()
+        };
+
+        let save = JSON.parse(JSON.stringify(DEFAULT_SAVE));
+        let activeTab = 'evo';
+        let buildBatch = 1; // 1 | 10 | 25 | 'MAX'
+        let modifierBatch = 0; // Ctrl=10, Shift=25, Alt=100
+        let hideResearchedTechs = false;
+        let envMods = {};
+
+        /* 运行期实时指标 */
+        let metrics = {
+            caps: {},
+            netRates: {},
+            popCap: 0,
+            popGrowthRate: 0,
+            popBaseRate: 0,
+            popVacancyBonus: 0,
+            popProsperityMult: 1.0,
+            happyMult: 1.0,
+            taxIncome: 0,
+            powerGen: 0,
+            powerReq: 0,
+            powerSurplus: 0,
+            powerRatio: 1.0,
+            moraleBreakdown: null
+        };
+
+        function ensureEvolveWorldFields() {
+            const w = save.world;
+            if (!w.evoCells || typeof w.evoCells !== 'object') {
+                w.evoCells = { membrane: 0, organelles: 0, nucleus: 0, eukaryotic_cell: 0, mitochondria: 0 };
+            }
+            if (!w.kingdom) w.kingdom = 'animal';
+            if (!w.species) w.species = 'human';
+            if (!w.gov) w.gov = 'anarchy';
+            if (typeof w.taxRate !== 'number') w.taxRate = 20;
+            if (!w.smelterMode) w.smelterMode = 'coal';
+            if (!w.craftFocus) w.craftFocus = 'balanced';
+            if (!w.extraBlds || typeof w.extraBlds !== 'object') w.extraBlds = {};
+            if (typeof w.madArmed !== 'boolean') w.madArmed = false;
+
+            const p = save.prestige;
+            if (typeof p.madCount !== 'number') p.madCount = 0;
+            if (typeof p.arkCount !== 'number') p.arkCount = 0;
+            if (typeof p.phage !== 'number') p.phage = 0;
+            if (typeof p.rapidMutation !== 'boolean') p.rapidMutation = p.madCount > 0 || p.count > 0;
+            if (typeof p.ancientRuins !== 'boolean') p.ancientRuins = p.madCount > 0 || p.count > 0;
+
+            if (window.EvolveModules && window.EvolveModules.Bridge) {
+                window.EvolveModules.Bridge.ensureAllFields(save);
+            }
+        }
+
+        function getEffectiveBatch() {
+            if (modifierBatch > 0) return modifierBatch;
+            return buildBatch;
+        }
+
+        function getExtraBuildingDef(bId) {
+            const local = EVOLVE_EXTRA_BLDS_DEF.find(b => b.id === bId);
+            if (local) return local;
+            if (window.EvolveModules && window.EvolveModules.DataLoader) {
+                return window.EvolveModules.DataLoader.MAPS.extraBuildings[bId] || null;
+            }
+            return null;
+        }
+
+        function isJobUnlocked(jobId) {
+            const w = save.world;
+            const dl = window.EvolveModules && window.EvolveModules.DataLoader;
+            const extraJobs = dl ? (dl.DATA.extraJobs || []) : [];
+            const jDef = JOBS_DEF.find(j => j.id === jobId) || extraJobs.find(j => j.id === jobId);
+            if (!jDef) return false;
+            if (jDef.reqTech && !w.techs[jDef.reqTech]) return false;
+            if (jobId === 'priest') {
+                return w.gov === 'theocracy'
+                    || !!(dl && dl.hasCrispr(save, 'ancients'))
+                    || ((w.extraBlds && w.extraBlds.temple) > 0);
+            }
+            return true;
+        }
+
+        function getHostApi() {
+            return {
+                ERAS_DEF, RESOURCES_DEF, JOBS_DEF, BUILDINGS_DEF, TECHS_DEF, TECH_MAP,
+                MISSIONS_DEF, PERKS_DEF, EVO_CHAIN_IDS, EVOLVE_CELL_STRUCTURES_DEF, EVOLVE_EXTRA_BLDS_DEF,
+                getSave: () => save,
+                getMetrics: () => metrics,
+                getEnvMods: () => envMods,
+                setEnvMods: (m) => { envMods = m || {}; },
+                getResName: (id) => (RES_MAP[id] ? RES_MAP[id].name : id),
+                addResourceClamped,
+                recomputeCapacities,
+                showToast,
+                isJobUnlocked,
+                tryBuyBuildingSingle: (bId, isExtra) => buyBuilding(bId, isExtra, 1),
+                tryBuyTechnology: (tId) => buyTechnology(tId),
+                getActiveTab: () => activeTab,
+                getBatch: () => getEffectiveBatch(),
+                getHideResearchedTechs: () => hideResearchedTechs,
+                fmt,
+                fmtRate,
+                playClick: () => sound.playClick(),
+                playBuild: () => sound.playBuild(),
+                playTech: () => sound.playTech(),
+                markDirtyAndRender: () => { dirtyUI = true; updateUI(); },
+                saveGame,
+                getPerkLevel,
+                getCellStructureCost,
+                canAffordCost,
+                getEffectiveTechCost,
+                getRecruitFoodCost,
+                getCityTitle,
+                getMaxAffordableBuilding,
+                getBuildingCost,
+                canMadResetNow,
+                calcMadPlasmidGain,
+                canPrestigeNow,
+                calcPrestigeGain,
+                calcPhageGain
+            };
+        }
+
+        function getCityTitle(pop) {
+            const p = Math.floor(pop || 0);
+            for (const item of EVOLVE_CITY_TITLES) {
+                if (p <= item.maxPop) return item.name;
+            }
+            return '联合城市群';
+        }
+
+        /* =====================================================================
+           3. Web Audio API 轻量 8-Bit 音效合成器（无外部音频文件）
+           ===================================================================== */
+        const sound = {
+            ctx: null,
+            ensure() {
+                if (!save.settings.sound) return null;
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume().catch(() => {});
+                }
+                return this.ctx;
+            },
+            tone(freq, type, dur, vol = 0.08, delay = 0) {
+                const ctx = this.ensure();
+                if (!ctx) return;
+                try {
+                    const now = ctx.currentTime + delay;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(vol, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + dur);
+                } catch (_) {}
+            },
+            playClick() { this.tone(520, 'square', 0.045, 0.05); },
+            playBuild() { this.tone(330, 'triangle', 0.06, 0.08); this.tone(495, 'triangle', 0.08, 0.08, 0.05); },
+            playTech() { this.tone(440, 'square', 0.07, 0.07); this.tone(660, 'square', 0.09, 0.07, 0.06); this.tone(880, 'square', 0.12, 0.07, 0.12); },
+            playEra() {
+                [392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+                    this.tone(f, 'square', 0.14, 0.08, i * 0.08);
+                });
+            },
+            playNuke() {
+                [196, 146.8, 110, 82.4, 65.4].forEach((f, i) => {
+                    this.tone(f, 'sawtooth', 0.22, 0.10, i * 0.09);
+                });
+            }
+        };
+
+        /* =====================================================================
+           4. 格式化工具与提示条/模态框
+           ===================================================================== */
+        function fmt(n) {
+            if (window.EvolveModules && window.EvolveModules.DataLoader) {
+                return window.EvolveModules.DataLoader.formatNumber(n, (save.settings && save.settings.numFormat) || 'metric');
+            }
+            if (!isFinite(n)) return '0';
+            const abs = Math.abs(n);
+            if (abs >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+            if (abs >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+            if (abs >= 1e4) return (n / 1e3).toFixed(1) + 'K';
+            if (abs >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+            if (abs >= 100) return Math.floor(n).toString();
+            if (abs >= 10) return n.toFixed(1).replace(/\.0$/, '');
+            return n.toFixed(1).replace(/\.0$/, '');
+        }
+
+        function fmtRate(r) {
+            if (Math.abs(r) < 0.05) return '0.0/s';
+            return (r > 0 ? '+' : '') + r.toFixed(1) + '/s';
+        }
+
+        let toastTimer = null;
+        function showToast(msg) {
+            const el = document.getElementById('toast-bar');
+            if (!el) return;
+            el.textContent = msg;
+            el.classList.add('show');
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove('show'), 2300);
+        }
+
+        function openModal({ title, bodyHtml, showTextarea = false, textareaValue = '', readonly = false, buttons = [] }) {
+            const backdrop = document.getElementById('modal-backdrop');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').innerHTML = bodyHtml;
+            const ta = document.getElementById('modal-textarea');
+            if (showTextarea) {
+                ta.classList.remove('hidden');
+                ta.value = textareaValue;
+                ta.readOnly = readonly;
+            } else {
+                ta.classList.add('hidden');
+            }
+            const footer = document.getElementById('modal-footer');
+            footer.innerHTML = '';
+            buttons.forEach(btn => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = `pixel-btn ${btn.cls || 'bg-slate'}`;
+                b.style.padding = '6px 12px';
+                b.style.flex = '1';
+                b.textContent = btn.text;
+                b.onclick = () => {
+                    if (btn.onClick) btn.onClick(ta.value);
+                    if (btn.close !== false) closeModal();
+                };
+                footer.appendChild(b);
+            });
+            backdrop.classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-backdrop').classList.remove('open');
+        }
+
+        /* =====================================================================
+           5. 固定对象池（最多 8 个浮动文字 + 最多 16 个像素粒子）
+           ===================================================================== */
+        const floatPool = [];
+        let floatPoolIdx = 0;
+
+        function initFloatPool() {
+            for (let i = 0; i < 8; i++) {
+                const el = document.createElement('div');
+                el.className = 'float-text';
+                document.body.appendChild(el);
+                floatPool.push(el);
+            }
+        }
+
+        function spawnFloatText(clientX, clientY, text, color = '#6ee7b7') {
+            if (!floatPool.length) return;
+            const el = floatPool[floatPoolIdx];
+            floatPoolIdx = (floatPoolIdx + 1) % floatPool.length;
+            el.textContent = text;
+            el.style.color = color;
+            el.style.left = `${clientX}px`;
+            el.style.top = `${clientY}px`;
+            el.style.opacity = '1';
+            el.classList.remove('anim');
+            void el.offsetWidth;
+            el.classList.add('anim');
+        }
+
+        const PARTICLE_MAX = 16;
+        const particlePool = Array.from({ length: PARTICLE_MAX }, () => ({
+            active: false, x: 0, y: 0, vx: 0, vy: 0, life: 0, color: '#34d399'
+        }));
+        let particleIdx = 0;
+
+        function spawnParticles(nx, ny, color = '#6ee7b7') {
+            const px = Math.floor(nx * 64);
+            const py = Math.floor(ny * 64);
+            for (let i = 0; i < 4; i++) {
+                const p = particlePool[particleIdx];
+                particleIdx = (particleIdx + 1) % PARTICLE_MAX;
+                p.active = true;
+                p.x = px;
+                p.y = py;
+                p.vx = (Math.random() - 0.5) * 18;
+                p.vy = -8 - Math.random() * 14;
+                p.life = 0.45;
+                p.color = color;
+            }
+        }
+
+        /* =====================================================================
+           6. 核心数值计算（容量、细胞结构、建筑价格、人口增长、电力、工业配方、任务、双轨转生）
+           ===================================================================== */
+        function getPerkLevel(id) {
+            return save.prestige.perks[id] || 0;
+        }
+
+        function getShardMultiplier() {
+            const lifetime = save.prestige.lifetimeShards || save.prestige.genesisShards || 0;
+            const phage = save.prestige.phage || 0;
+            // 每枚质粒/余烬 +2%，每枚噬菌体额外提升 +3%
+            return 1 + lifetime * 0.02 + phage * 0.03;
+        }
+
+        /* 计算 Evolve 细胞结构单次购买成本（还原 main.js Si 线性递增公式） */
+        function getCellStructureCost(cellDef) {
+            ensureEvolveWorldFields();
+            const w = save.world;
+            const cnt = w.evoCells[cellDef.id] || 0;
+            const isMulticellular = !!w.techs.evo_multicellular;
+            const incRna = (cellDef.id === 'nucleus' && isMulticellular) ? cellDef.incRnaMulti : cellDef.incRna;
+            const incDna = (cellDef.id === 'nucleus' && isMulticellular) ? cellDef.incDnaMulti : cellDef.incDna;
+            const cost = {};
+            if (cellDef.baseRna > 0) cost.rna = cellDef.baseRna + cnt * incRna;
+            if (cellDef.baseDna > 0) cost.dna = cellDef.baseDna + cnt * incDna;
+            return cost;
+        }
+
+        function buyCellStructure(cellId) {
+            ensureEvolveWorldFields();
+            const w = save.world;
+            const cDef = EVOLVE_CELL_STRUCTURES_DEF.find(c => c.id === cellId);
+            if (!cDef) return;
+            if (cDef.reqEvo && !w.techs[cDef.reqEvo]) return;
+            const cost = getCellStructureCost(cDef);
+            if (!canAffordCost(cost)) return;
+
+            payCost(cost);
+            w.evoCells[cellId] = (w.evoCells[cellId] || 0) + 1;
+            sound.playBuild();
+            recomputeCapacities();
+            checkMissions();
+            dirtyUI = true;
+            updateUI();
+        }
+
+        function addResourceClamped(id, delta) {
+            const w = save.world;
+            const cap = metrics.caps[id] || (RES_MAP[id] ? RES_MAP[id].baseCap : 100);
+            const next = Math.max(0, Math.min(cap, (w.res[id] || 0) + delta));
+            w.res[id] = next;
+            if (next > 0) w.unlockedRes[id] = true;
+        }
+
+        function recomputeCapacities() {
+            ensureEvolveWorldFields();
+            const w = save.world;
+            const b = w.buildings;
+            const eb = w.extraBlds;
+            const t = w.techs;
+            const cells = w.evoCells;
+            const phageStorageMult = 1 + (save.prestige.phage || 0) * 0.05;
+            const caps = {};
+
+            RESOURCES_DEF.forEach(r => {
+                caps[r.id] = r.baseCap;
+            });
+
+            // 1. 生命起源阶段：细胞膜、真核细胞与线粒体的真实联动扩容 (源自 main.js d.evolution)
+            const mitoCnt = cells.mitochondria || 0;
+            const memPerLevel = 5 + mitoCnt * 5;
+            const eukPerLevel = 10 + mitoCnt * 10;
+            caps.rna += (cells.membrane || 0) * memPerLevel + (save.prestige.madCount > 0 ? 50 : 0);
+            caps.dna += (cells.eukaryotic_cell || 0) * eukPerLevel;
+
+            // 2. 仓库扩容：食物+200、木材+150、石材+150
+            const wh = b.warehouse || 0;
+            if (wh > 0) {
+                caps.food += wh * 200;
+                caps.lumber += wh * 150;
+                caps.stone += wh * 150;
+            }
+
+            // 3. 货运仓库扩容：全部矿产/加工/工业/高科技/太空资源 +300/座
+            const fwh = b.freightWarehouse || 0;
+            if (fwh > 0) {
+                RESOURCES_DEF.forEach(r => {
+                    if (r.era >= 2 && r.id !== 'money' && r.id !== 'knowledge') {
+                        caps[r.id] += fwh * 300;
+                    }
+                });
+            }
+
+            // 4. 银行、图书馆、大学、沃登克里弗塔、生命科学实验室、工业研究中心、数据中心、AI超算扩容
+            caps.money += (b.bank || 0) * 10000;
+            caps.knowledge += (b.library || 0) * 250;
+            caps.knowledge += (b.university || 0) * 2000;
+            caps.knowledge += (eb.wardenclyffe || 0) * 2500;
+            caps.knowledge += (eb.biolab || 0) * 5000;
+            caps.knowledge += (b.researchCenter || 0) * 10000;
+            caps.knowledge += (b.datacenter || 0) * 30000;
+            caps.money += (b.datacenter || 0) * 30000;
+            caps.knowledge += (b.supercomputer || 0) * 100000;
+            caps.money += (b.supercomputer || 0) * 100000;
+
+            if (phageStorageMult > 1) {
+                Object.keys(caps).forEach(k => {
+                    if (k !== 'rna' && k !== 'dna') {
+                        caps[k] = Math.round(caps[k] * phageStorageMult);
+                    }
+                });
+            }
+
+            // 5. 住房容量上限（简陋居所+5、茅屋+3、现代公寓+6、火星殖民穹顶+25，建筑学+10%）
+            let rawPopCap = (b.primitiveHut || 0) * 5
+                + (eb.cottage || 0) * 3
+                + (eb.apartment || 0) * 6
+                + (b.marsColony || 0) * 25;
+            if (t.construction) rawPopCap = Math.floor(rawPopCap * 1.10);
+
+            if (window.EvolveModules && window.EvolveModules.Bridge) {
+                rawPopCap = window.EvolveModules.Bridge.applyExtendedCapacities(getHostApi(), caps, rawPopCap);
+            }
+            metrics.caps = caps;
+            metrics.popCap = rawPopCap;
+
+            // 同步解锁当前时代及已研究科技对应的资源可见性
+            RESOURCES_DEF.forEach(r => {
+                if (r.era <= w.eraIndex) {
+                    if (r.id === 'copper' && !t.copperAge && w.eraIndex < 3) return;
+                    if (r.id === 'iron' && !t.ironAge && w.eraIndex < 3) return;
+                    if (r.id === 'coal' && !t.advancedMining && w.eraIndex < 3) return;
+                    if ((r.id === 'plywood' || r.id === 'brick' || r.id === 'wroughtIron') && !t.smelting && w.eraIndex < 3) return;
+                    if (r.id === 'money' && !t.currency && w.eraIndex < 3) return;
+                    w.unlockedRes[r.id] = true;
+                }
+            });
+        }
+
+        function getBuildingCostDiscount() {
+            const w = save.world;
+            let mult = w.techs.mathematics ? 0.97 : 1.0;
+            if (w.kingdom === 'fungi') mult *= 0.96;
+            if (w.species === 'dwarf') mult *= 0.95;
+            if (envMods && envMods.buildCostMult) mult *= envMods.buildCostMult;
+            return mult;
+        }
+
+        /* 计算建筑购买 k 座的逐座向上取整总费用 */
+        function getBuildingCost(bDef, countToBuy, isExtra = false) {
+            const store = isExtra ? save.world.extraBlds : save.world.buildings;
+            const owned = store[bDef.id] || 0;
+            const discount = getBuildingCostDiscount();
+            const total = {};
+            for (const resId of Object.keys(bDef.baseCost)) {
+                total[resId] = 0;
+            }
+            for (let i = 0; i < countToBuy; i++) {
+                const n = owned + i;
+                for (const [resId, baseVal] of Object.entries(bDef.baseCost)) {
+                    total[resId] += Math.ceil(baseVal * Math.pow(bDef.growth, n) * discount);
+                }
+            }
+            return total;
+        }
+
+        function getMaxAffordableBuilding(bDef, isExtra = false) {
+            const store = isExtra ? save.world.extraBlds : save.world.buildings;
+            const owned = store[bDef.id] || 0;
+            const maxAllowed = bDef.maxCount ? Math.max(0, bDef.maxCount - owned) : 200;
+            if (maxAllowed <= 0) return 0;
+
+            const discount = getBuildingCostDiscount();
+            const running = {};
+            for (const resId of Object.keys(bDef.baseCost)) running[resId] = 0;
+
+            let canBuy = 0;
+            for (let i = 0; i < maxAllowed; i++) {
+                const n = owned + i;
+                let ok = true;
+                for (const [resId, baseVal] of Object.entries(bDef.baseCost)) {
+                    const stepCost = Math.ceil(baseVal * Math.pow(bDef.growth, n) * discount);
+                    if ((save.world.res[resId] || 0) < running[resId] + stepCost) {
+                        ok = false;
+                        break;
+                    }
+                }
+                if (!ok) break;
+                for (const [resId, baseVal] of Object.entries(bDef.baseCost)) {
+                    running[resId] += Math.ceil(baseVal * Math.pow(bDef.growth, n) * discount);
+                }
+                canBuy++;
+            }
+            return canBuy;
+        }
+
+        function getEffectiveTechCost(tDef) {
+            const w = save.world;
+            let knowMult = 1.0;
+            if (w.species === 'human') knowMult *= 0.95;
+            if (w.gov === 'technocracy') knowMult *= 0.92;
+            if (envMods && envMods.techKnowCostMult) knowMult *= envMods.techKnowCostMult;
+            const out = {};
+            for (const [rId, amt] of Object.entries(tDef.cost)) {
+                out[rId] = (rId === 'knowledge') ? Math.max(1, Math.floor(amt * knowMult)) : amt;
+            }
+            return out;
+        }
+
+        function canAffordCost(costObj) {
+            for (const [resId, amt] of Object.entries(costObj)) {
+                if ((save.world.res[resId] || 0) < amt) return false;
+            }
+            return true;
+        }
+
+        function payCost(costObj) {
+            for (const [resId, amt] of Object.entries(costObj)) {
+                save.world.res[resId] = Math.max(0, (save.world.res[resId] || 0) - amt);
+            }
+        }
+
+        /* 主动吸引流民（消耗盈余食物立即 +2 人口） */
+        function getRecruitFoodCost() {
+            const pop = Math.max(0, Math.floor(save.world.pop));
+            return Math.floor(150 * Math.pow(1.04, Math.max(0, pop - 2)));
+        }
+
+        function recruitPopulation() {
+            const w = save.world;
+            if (w.eraIndex < 1) return;
+            recomputeCapacities();
+            const curPop = Math.floor(w.pop);
+            const vacant = Math.max(0, metrics.popCap - curPop);
+            const cost = getRecruitFoodCost();
+            if (vacant <= 0 || (w.res.food || 0) < cost) return;
+
+            const gain = Math.min(2, vacant);
+            w.res.food -= cost;
+            w.pop = Math.min(metrics.popCap, curPop + gain);
+            sound.playBuild();
+
+            const wrap = document.getElementById('canvas-wrapper');
+            if (wrap) {
+                const rect = wrap.getBoundingClientRect();
+                spawnFloatText(rect.left + rect.width * 0.5, rect.top + rect.height * 0.45, `+${gain} 人口`, '#38bdf8');
+                spawnParticles(0.5, 0.45, '#38bdf8');
+            }
+
+            checkMissions();
+            checkEraAdvancement();
+            dirtyUI = true;
+            updateUI();
+        }
+
+        /* 顺序主线任务检查（支持跨多级自动追溯与防重复发放） */
+        function checkMissions() {
+            const w = save.world;
+            let anyCompleted = false;
+            while (w.missionIndex < MISSIONS_DEF.length) {
+                const m = MISSIONS_DEF[w.missionIndex];
+                if (m.check(w)) {
+                    w.missionIndex++;
+                    anyCompleted = true;
+                    if (m.reward && m.reward.res) {
+                        for (const [rId, val] of Object.entries(m.reward.res)) {
+                            w.unlockedRes[rId] = true;
+                            addResourceClamped(rId, val);
+                        }
+                    }
+                    const msg = `✅ 完成任务 [${m.id}] ${m.name}！`;
+                    showToast(msg);
+                    if (window.EvolveModules && window.EvolveModules.EventsAchieves) {
+                        window.EvolveModules.EventsAchieves.addLog({ save }, 'progress', msg, 'emerald');
+                    }
+                } else {
+                    break;
+                }
+            }
+            if (anyCompleted) {
+                recomputeCapacities();
+                dirtyUI = true;
+            }
+        }
+
+        /* 核心时代自动晋升校验 */
+        function checkEraAdvancement() {
+            const w = save.world;
+            const t = w.techs;
+            const b = w.buildings;
+            let advanced = false;
+
+            if (w.eraIndex === 0 && t.evo_sapiens) {
+                w.eraIndex = 1;
+                w.pop = 2;
+                b.primitiveHut = (b.primitiveHut || 0) + 1;
+                ['food', 'lumber', 'stone', 'knowledge'].forEach(id => { w.unlockedRes[id] = true; });
+                recomputeCapacities();
+                addResourceClamped('food', 40);
+                addResourceClamped('lumber', 15);
+                addResourceClamped('stone', 10);
+                addResourceClamped('knowledge', 10);
+                advanced = true;
+            } else if (w.eraIndex === 1 && w.pop >= 45 && t.mining && t.mathematics && w.missionIndex >= 17) {
+                w.eraIndex = 2;
+                advanced = true;
+            } else if (w.eraIndex === 2 && w.pop >= 120 && t.steel && (b.university || 0) >= 1 && w.missionIndex >= 26) {
+                w.eraIndex = 3;
+                advanced = true;
+            } else if (w.eraIndex === 3 && t.electronics && (b.coalPowerPlant || 0) >= 1 && metrics.powerSurplus >= 10 && w.missionIndex >= 34) {
+                w.eraIndex = 4;
+                advanced = true;
+            } else if (w.eraIndex === 4 && t.particlePhysics && (b.nuclearPowerPlant || 0) >= 1 && w.missionIndex >= 37) {
+                w.eraIndex = 5;
+                advanced = true;
+            } else if (w.eraIndex === 5 && t.artificialIntelligence && (b.supercomputer || 0) >= 1 && w.missionIndex >= 43) {
+                w.eraIndex = 6;
+                advanced = true;
+            }
+
+            if (advanced) {
+                recomputeCapacities();
+                sound.playEra();
+                const era = ERAS_DEF[w.eraIndex];
+                const msg = `🎉 文明跃迁：进入【${era.name}】！`;
+                showToast(msg);
+                if (window.EvolveModules && window.EvolveModules.EventsAchieves) {
+                    window.EvolveModules.EventsAchieves.addLog({ save }, 'progress', msg, 'amber');
+                }
+                dirtyUI = true;
+            }
+        }
+
+        /* 单步模拟 Tick（dt 秒，融合《进化 Evolve》历法/天气/仓储/贸易/外交/ARPA/基因/总督/工业逻辑） */
+        function stepSimulation(dt) {
+            ensureEvolveWorldFields();
+            const w = save.world;
+            const b = w.buildings;
+            const eb = w.extraBlds;
+            const t = w.techs;
+            const cells = w.evoCells;
+            const shardMult = getShardMultiplier();
+            const autoLv = getPerkLevel('automation');
+            const eco = window.EvolveModules && window.EvolveModules.EconomyStorage;
+            const activeCnt = (id, isEx = false) => eco ? eco.getActiveBuildingCount(w, id, isEx) : ((isEx ? eb[id] : b[id]) || 0);
+
+            // 自动化天赋：自动将空闲人口分配至农民（保障粮食供给）
+            if (w.eraIndex >= 1 && autoLv > 0) {
+                const assigned = Object.values(w.jobs).reduce((a, c) => a + c, 0);
+                const idle = Math.floor(w.pop) - assigned;
+                if (idle > 0) {
+                    w.jobs.farmer = (w.jobs.farmer || 0) + idle;
+                }
+            }
+
+            const rates = {};
+            RESOURCES_DEF.forEach(r => { rates[r.id] = 0; });
+
+            // 1. 生命起源阶段：进化节点基础自动产出 + Evolve 细胞器/细胞核真实转录逻辑
+            let lifeMult = shardMult * (save.prestige.rapidMutation ? 2.0 : 1.0);
+            if (t.evo_organelle) lifeMult *= 1.10;
+            if (t.evo_nucleus) lifeMult *= 1.15;
+            if (t.evo_multicellular) lifeMult *= 1.15;
+            if (t.evo_vertebrate) lifeMult *= 1.20;
+            if (t.evo_mammal) lifeMult *= 1.20;
+            if (t.evo_primate) lifeMult *= 1.25;
+
+            if (t.evo_organelle) rates.rna += 0.25 * lifeMult;
+            if (t.evo_nucleus) rates.rna += 0.35 * lifeMult;
+            if (t.evo_nucleus) rates.dna += 0.15 * lifeMult;
+            if (t.evo_vertebrate) rates.dna += 0.25 * lifeMult;
+
+            // Evolve 细胞器自动复制产生 RNA (organelles)
+            const orgCnt = cells.organelles || 0;
+            if (orgCnt > 0) {
+                const perOrg = (t.evo_organelle ? 2.0 : 1.0) * (save.prestige.rapidMutation ? 2.0 : 1.0);
+                rates.rna += orgCnt * perOrg * shardMult;
+            }
+
+            // Evolve 细胞核将 2 RNA 转化为 1~2 DNA (nucleus)
+            const nucCnt = cells.nucleus || 0;
+            if (nucCnt > 0 && (w.res.dna || 0) < (metrics.caps.dna || 150)) {
+                const rnaNeedPerSec = nucCnt * 2.0;
+                const availRna = (w.res.rna || 0) + Math.max(0, rates.rna * dt);
+                const ratio = rnaNeedPerSec * dt > 0 ? Math.min(1, availRna / (rnaNeedPerSec * dt)) : 0;
+                const dnaOutPerNuc = t.evo_vertebrate ? 2.0 : 1.0;
+                rates.rna -= rnaNeedPerSec * ratio;
+                rates.dna += nucCnt * dnaOutPerNuc * ratio * shardMult;
+            }
+
+            let happyMult = 1.0;
+            let powerRatio = 1.0;
+            let foodNeed = 0;
+
+            // 2. 农业及之后时代：物种特质、政体、税率、士气、职业、建筑、电力与工业配方
+            if (w.eraIndex >= 1) {
+                const ruinsMult = (save.prestige.ancientRuins && w.eraIndex <= 2) ? 1.25 : 1.0;
+                const fedMult = w.gov === 'federation' ? 1.25 : 1.0;
+
+                // 部落初始自发观察知识（防止农业刚开启时知识断路）
+                rates.knowledge += 0.30 * shardMult * ruinsMult * fedMult;
+
+                // 植物界叶绿体 / 特质修正市民粮食消耗
+                const baseFoodPerPop = w.kingdom === 'plant' ? 0.15 : 0.20;
+                foodNeed = w.pop * baseFoodPerPop * ((envMods && envMods.foodNeedMult) || 1.0);
+                rates.food -= foodNeed;
+
+                // 驻军狩猎补给与战利品 (garrison)
+                const garCnt = eb.garrison || 0;
+                if (garCnt > 0) {
+                    const milMult = (w.kingdom === 'animal' ? 1.25 : 1) * (w.species === 'orc' ? 1.30 : 1) * (w.gov === 'autocracy' ? 1.18 : 1) * shardMult * fedMult;
+                    rates.food += garCnt * 1.2 * milMult;
+                    if (t.currency) rates.money += garCnt * 0.8 * milMult;
+                }
+
+                // 市民士气（由 EvolveModules.CalendarWeather 精细计算更新，这里同步获取当拍幸福乘数）
+                const foodSat = foodNeed <= 0 ? 1 : Math.min(1, (w.res.food + Math.max(0, rates.food)) / Math.max(0.1, foodNeed));
+                if (w.happiness >= 120) happyMult = 1.25;
+                else if (w.happiness >= 90) happyMult = 1.10;
+                else if (w.happiness >= 70) happyMult = 1.00;
+                else if (w.happiness >= 50) happyMult = 0.90;
+                else if (w.happiness >= 30) happyMult = 0.75;
+                else happyMult = 0.60;
+                metrics.happyMult = happyMult;
+
+                const agriMult = (1 + getPerkLevel('agriculturalRevolution') * 0.05) * (w.species === 'ent' ? 1.20 : 1) * fedMult;
+                const lumberTraitMult = (w.kingdom === 'plant' ? 1.20 : 1) * (w.species === 'elf' ? 1.30 : (w.species === 'ent' ? 1.40 : 1)) * fedMult;
+                const mineTraitMult = (w.kingdom === 'fungi' ? 1.20 : 1) * (w.species === 'dwarf' ? 1.25 : 1) * (w.gov === 'socialist' ? 1.22 : 1) * fedMult;
+                const indPerkMult = (1 + getPerkLevel('industrialRevolution') * 0.05) * (w.gov === 'autocracy' ? 1.18 : (w.gov === 'socialist' ? 1.22 : 1)) * fedMult;
+                const sciMult = (1 + getPerkLevel('scientificRevolution') * 0.06)
+                    * (1 + (b.satelliteNetwork || 0) * 0.05)
+                    * (t.particlePhysics ? 1.20 : 1)
+                    * (t.internet ? 1.20 : 1)
+                    * (w.species === 'human' ? 1.12 : (w.species === 'elf' ? 1.15 : 1))
+                    * (w.gov === 'democracy' ? 1.12 : (w.gov === 'technocracy' ? 1.20 : 1))
+                    * ruinsMult * fedMult;
+                const moneyMult = (t.trade ? 1.20 : 1)
+                    * (t.internet ? 1.20 : 1)
+                    * (w.gov === 'democracy' ? 1.12 : (w.gov === 'oligarchy' ? 1.25 : 1))
+                    * fedMult;
+
+                // 市民纳税收入（研究【货币】后生效，公司官僚主义税收减半，社会主义略降）
+                if (t.currency && w.pop > 0) {
+                    let govTaxFactor = 1.0;
+                    if (w.gov === 'oligarchy') govTaxFactor = 1.20;
+                    else if (w.gov === 'corpocracy') govTaxFactor = 0.50;
+                    else if (w.gov === 'socialist') govTaxFactor = 0.85;
+                    const taxMult = govTaxFactor * moneyMult * happyMult * shardMult;
+                    const taxInc = Math.floor(w.pop) * 0.16 * (w.taxRate / 20) * taxMult;
+                    metrics.taxIncome = taxInc;
+                    rates.money += taxInc;
+                } else {
+                    metrics.taxIncome = 0;
+                }
+
+                // 12 种职业产出与消耗
+                JOBS_DEF.forEach(j => {
+                    const workers = w.jobs[j.id] || 0;
+                    if (workers <= 0) return;
+
+                    let jobMult = happyMult * shardMult * ruinsMult;
+                    if (j.id === 'farmer') jobMult *= (1 + (b.farmland || 0) * 0.20) * agriMult;
+                    if (j.id === 'lumberjack') jobMult *= (1 + (b.lumberCamp || 0) * 0.25) * (t.tools ? 1.10 : 1) * lumberTraitMult;
+                    if (j.id === 'quarryWorker') jobMult *= (1 + (b.quarry || 0) * 0.25) * (t.tools ? 1.10 : 1) * mineTraitMult;
+                    if (j.id === 'scholar') jobMult *= (1 + (b.library || 0) * 0.20) * (t.writing ? 1.10 : 1) * sciMult;
+                    if (j.id === 'professor') jobMult *= (1 + (b.university || 0) * 0.15) * sciMult;
+                    if (j.id === 'scientist') jobMult *= sciMult;
+                    if (j.id === 'miner') jobMult *= (1 + (b.mine || 0) * 0.10) * mineTraitMult;
+                    if (j.id === 'coalMiner') jobMult *= (1 + (b.coalMine || 0) * 0.10) * mineTraitMult;
+                    if (j.id === 'merchant' || j.id === 'engineer') jobMult *= moneyMult;
+                    if (j.id === 'craftsman') jobMult *= (1 + (b.smelter || 0) * 0.15) * (1 + (b.foundry || 0) * 0.15) * indPerkMult * (w.species === 'dwarf' ? 1.25 : 1);
+
+                    let inputScale = 1.0;
+                    if (j.inRes) {
+                        for (const [inId, perWorker] of Object.entries(j.inRes)) {
+                            const need = workers * perWorker * dt;
+                            if (need > 0 && (w.res[inId] || 0) < need) {
+                                inputScale = Math.min(inputScale, (w.res[inId] || 0) / need);
+                            }
+                        }
+                        for (const [inId, perWorker] of Object.entries(j.inRes)) {
+                            rates[inId] -= workers * perWorker * inputScale;
+                        }
+                    }
+
+                    for (const [outId, perWorker] of Object.entries(j.out)) {
+                        let focusMult = 1.0;
+                        if (j.id === 'craftsman' && w.craftFocus !== 'balanced') {
+                            focusMult = (w.craftFocus === outId) ? 1.65 : 0.65;
+                        }
+                        rates[outId] += workers * perWorker * jobMult * inputScale * focusMult;
+                    }
+                });
+
+                // 建筑直产资源
+                const mineCnt = b.mine || 0;
+                if (mineCnt > 0) {
+                    rates.copper += mineCnt * 0.20 * shardMult * mineTraitMult;
+                    rates.iron += mineCnt * 0.25 * shardMult * mineTraitMult;
+                    if (t.aluminiumIndustry) rates.aluminium += mineCnt * 0.40 * shardMult * mineTraitMult;
+                }
+                if ((b.coalMine || 0) > 0) rates.coal += b.coalMine * 0.30 * shardMult * mineTraitMult;
+                if ((b.market || 0) > 0) rates.money += b.market * 0.50 * moneyMult * shardMult;
+                if ((eb.amphitheatre || 0) > 0) rates.knowledge += eb.amphitheatre * 0.50 * sciMult * shardMult;
+                if ((b.researchCenter || 0) > 0) rates.knowledge += activeCnt('researchCenter') * 2.0 * sciMult * shardMult;
+                if ((b.datacenter || 0) > 0) rates.knowledge += activeCnt('datacenter') * 10.0 * sciMult * shardMult;
+                if ((b.moonBase || 0) > 0) rates.waterIce += b.moonBase * 0.40 * shardMult * fedMult;
+                if ((b.marsColony || 0) > 0) rates.rareMineral += b.marsColony * 0.30 * shardMult * fedMult;
+
+                // 电力系统：三类电厂燃料消耗与发电功率
+                const energyMult = (1 + getPerkLevel('efficientEnergy') * 0.04) * (t.electricalEngineering ? 1.15 : 1) * ((envMods && envMods.powerMult) || 1.0);
+                let totalGen = 0;
+
+                const coalPlants = b.coalPowerPlant || 0;
+                if (coalPlants > 0) {
+                    const needCoal = coalPlants * 0.5 * dt;
+                    const ratio = needCoal > 0 ? Math.min(1, (w.res.coal || 0) / needCoal) : 1;
+                    rates.coal -= coalPlants * 0.5 * ratio;
+                    totalGen += coalPlants * 20 * ratio * energyMult;
+                }
+
+                const nucPlants = b.nuclearPowerPlant || 0;
+                if (nucPlants > 0) {
+                    const needU = nucPlants * 0.1 * dt;
+                    const ratio = needU > 0 ? Math.min(1, (w.res.uranium || 0) / needU) : 1;
+                    rates.uranium -= nucPlants * 0.1 * ratio;
+                    totalGen += nucPlants * 100 * ratio * energyMult;
+                }
+
+                const fusPlants = b.fusionPowerPlant || 0;
+                if (fusPlants > 0) {
+                    const needH3 = fusPlants * 0.05 * dt;
+                    const ratio = needH3 > 0 ? Math.min(1, (w.res.helium3 || 0) / needH3) : 1;
+                    rates.helium3 -= fusPlants * 0.05 * ratio;
+                    totalGen += fusPlants * 500 * ratio * energyMult;
+                }
+
+                const gridDiscount = 1 - Math.min(0.20, (b.gridControl || 0) * 0.05);
+                const extraPowerReq = (window.EvolveModules && window.EvolveModules.Bridge)
+                    ? window.EvolveModules.Bridge.getExtraPowerReq(w) : 0;
+                const rawPowerReq = (
+                    activeCnt('steelMill') * 8 +
+                    activeCnt('cementPlant') * 5 +
+                    activeCnt('oilWell') * 3 +
+                    activeCnt('refinery') * 6 +
+                    activeCnt('factory') * 10 +
+                    activeCnt('researchCenter') * 5 +
+                    activeCnt('uraniumMine') * 10 +
+                    activeCnt('cleanRoom') * 15 +
+                    activeCnt('chipFab') * 20 +
+                    activeCnt('datacenter') * 25 +
+                    activeCnt('launchPad') * 15 +
+                    activeCnt('helium3Harvester') * 20 +
+                    activeCnt('apartment', true) * 1 +
+                    activeCnt('wardenclyffe', true) * 2 +
+                    activeCnt('biolab', true) * 2 +
+                    extraPowerReq
+                ) * gridDiscount;
+
+                metrics.powerGen = totalGen;
+                metrics.powerReq = rawPowerReq;
+                metrics.powerSurplus = totalGen - rawPowerReq;
+                powerRatio = rawPowerReq <= 0 ? 1 : Math.min(1, totalGen / rawPowerReq);
+                metrics.powerRatio = powerRatio;
+
+                // 沃登克里弗塔与生命科学实验室通电科研加成
+                if (activeCnt('wardenclyffe', true) > 0) {
+                    rates.knowledge += activeCnt('wardenclyffe', true) * 4.5 * Math.max(0.3, powerRatio) * sciMult * shardMult;
+                }
+                if (activeCnt('biolab', true) > 0) {
+                    rates.knowledge += activeCnt('biolab', true) * 12.0 * Math.max(0.3, powerRatio) * sciMult * shardMult;
+                }
+
+                // 工业转化配方辅助函数（兼顾原料上限与电网供电比）
+                let indOutputMult = indPerkMult * shardMult * (t.mechanicalEngineering ? 1.15 : 1);
+                if (t.artificialIntelligence && (b.supercomputer || 0) >= 1) indOutputMult *= 1.25;
+
+                const runRecipe = (count, inputs, outputs, usePower = true, extraMult = 1.0) => {
+                    if (count <= 0) return;
+                    const pScale = usePower ? powerRatio : 1;
+                    if (pScale <= 0) return;
+                    let inScale = 1;
+                    for (const [inId, perUnit] of Object.entries(inputs)) {
+                        const need = count * perUnit * pScale * dt;
+                        if (need > 0 && (w.res[inId] || 0) < need) {
+                            inScale = Math.min(inScale, (w.res[inId] || 0) / need);
+                        }
+                    }
+                    const finalScale = pScale * inScale;
+                    if (finalScale <= 0) return;
+                    for (const [inId, perUnit] of Object.entries(inputs)) {
+                        rates[inId] -= count * perUnit * finalScale;
+                    }
+                    for (const [outId, perUnit] of Object.entries(outputs)) {
+                        rates[outId] += count * perUnit * finalScale * indOutputMult * extraMult;
+                    }
+                };
+
+                // 初级加工设施（支持冶炼炉燃料模式切换与工匠焦点加成）
+                let smelterBoost = 1.0;
+                const smCnt = b.smelter || 0;
+                if (smCnt > 0) {
+                    if (w.smelterMode === 'oil' && (w.res.oil || 0) >= smCnt * 0.2 * dt) {
+                        rates.oil -= smCnt * 0.2;
+                        smelterBoost = 1.50;
+                    } else if (w.smelterMode === 'coal' && (w.res.coal || 0) >= smCnt * 0.15 * dt) {
+                        rates.coal -= smCnt * 0.15;
+                        smelterBoost = 1.25;
+                    }
+                }
+                runRecipe(smCnt, { iron: 0.7 }, { wroughtIron: 0.35 }, false, smelterBoost);
+                runRecipe(b.foundry || 0, { lumber: 0.6, stone: 0.6 }, { plywood: 0.3, brick: 0.3 }, false);
+
+                // 工业与高科技生产线（结合电力开关）
+                runRecipe(activeCnt('steelMill'), { iron: 2, coal: 1 }, { steel: 1 }, true, smelterBoost);
+                runRecipe(activeCnt('cementPlant'), { stone: 3 }, { cement: 1 }, true);
+                runRecipe(activeCnt('oilWell'), {}, { oil: 1 }, true);
+                runRecipe(activeCnt('refinery'), { oil: 2 }, { polymer: 1 }, true);
+
+                const uMult = t.radioChemistry ? 1.20 : 1.0;
+                runRecipe(activeCnt('uraniumMine'), {}, { uranium: 0.3 * uMult }, true);
+
+                // 多功能工业厂房：电子元件 + 火箭部件协同生产
+                const facCnt = activeCnt('factory');
+                if (facCnt > 0 && t.electronics) {
+                    if (t.rocketry) {
+                        runRecipe(facCnt * 0.6, { aluminium: 1, polymer: 1 }, { electronics: 1 }, true);
+                        runRecipe(facCnt * 0.4, { steel: 2, aluminium: 1, polymer: 1, electronics: 1 }, { rocketParts: 1 }, true);
+                    } else {
+                        runRecipe(facCnt, { aluminium: 1, polymer: 1 }, { electronics: 1 }, true);
+                    }
+                }
+
+                runRecipe(activeCnt('cleanRoom'), { electronics: 1, polymer: 2 }, { wafer: 1 }, true);
+                runRecipe(activeCnt('chipFab'), { wafer: 1, aluminium: 1 }, { microprocessor: 1 }, true);
+                runRecipe(activeCnt('launchPad'), { steel: 1.2, aluminium: 0.6, polymer: 0.6, electronics: 0.6 }, { rocketParts: 0.6 }, true);
+                runRecipe(activeCnt('helium3Harvester'), {}, { helium3: 0.5 }, true);
+
+                // 繁荣度动态人口增长结算（基础 0.25/s + 空床位引力 + 粮食满仓繁荣倍率 + 环境与医院乘数）
+                const popPerkMult = (1 + getPerkLevel('populationBonus') * 0.05) * (w.species === 'orc' ? 1.20 : 1) * ((envMods && envMods.popGrowthMult) || 1.0);
+                const basePopRate = 0.25 * popPerkMult;
+                const vacantBeds = Math.max(0, metrics.popCap - w.pop);
+                const vacancyBonus = (vacantBeds / 10) * 0.15;
+                const foodCap = metrics.caps.food || 500;
+                const prosperityMult = (w.happiness >= 90 && (w.res.food || 0) >= foodCap * 0.5 && rates.food >= 0) ? 1.5 : 1.0;
+                const canGrow = w.pop < metrics.popCap && ((w.res.food || 0) > 0 || foodSat >= 0.8);
+                const totalPopRate = canGrow ? (basePopRate + vacancyBonus) * prosperityMult : 0;
+
+                metrics.popBaseRate = basePopRate;
+                metrics.popVacancyBonus = vacancyBonus;
+                metrics.popProsperityMult = prosperityMult;
+                metrics.popGrowthRate = totalPopRate;
+
+                if (totalPopRate > 0) {
+                    w.popAccum += totalPopRate * dt;
+                    if (w.popAccum >= 1) {
+                        const add = Math.floor(w.popAccum);
+                        w.popAccum -= add;
+                        w.pop = Math.min(metrics.popCap, w.pop + add);
+                    }
+                }
+            }
+
+            // 扩展系统单步结算（历法气象、环境精通乘数、市场贸易、外交战斗、ARPA/基因测序/总督、队列、事件与成就）
+            if (window.EvolveModules && window.EvolveModules.Bridge) {
+                window.EvolveModules.Bridge.stepExtendedSimulation(getHostApi(), dt, rates, {
+                    happyMult,
+                    shardMult,
+                    powerRatio,
+                    foodNeed
+                });
+            }
+
+            // 统一提交各资源净变化（严格限幅在 [0, cap]）
+            for (const r of RESOURCES_DEF) {
+                const net = rates[r.id] || 0;
+                metrics.netRates[r.id] = net;
+                if (net !== 0) {
+                    addResourceClamped(r.id, net * dt);
+                }
+            }
+        }
+
+        /* =====================================================================
+           7. 手动交互动作（单次点击、空格采集、时代专属行动按钮）
+           ===================================================================== */
+        function handleStageManualClick(clientX, clientY) {
+            ensureEvolveWorldFields();
+            const w = save.world;
+            w.clicks = (w.clicks || 0) + 1;
+            sound.playClick();
+
+            const shardMult = getShardMultiplier();
+            const animalMult = w.kingdom === 'animal' ? 1.25 : 1.0;
+            const orcMult = w.species === 'orc' ? 1.30 : 1.0;
+            const rapidMult = (w.eraIndex === 0 && save.prestige.rapidMutation) ? 2.0 : 1.0;
+            const clickMult = shardMult * (1 + getPerkLevel('automation') * 0.10) * (w.techs.tools ? 1.10 : 1) * animalMult * orcMult * rapidMult;
+            let floatLabel = '+1 RNA';
+            let floatColor = '#34d399';
+
+            if (w.eraIndex === 0) {
+                const gain = Math.max(1, Math.round(1 * clickMult));
+                addResourceClamped('rna', gain);
+                floatLabel = `+${gain} RNA`;
+            } else if (w.eraIndex === 1) {
+                const f = +(2 * clickMult).toFixed(1);
+                const l = +(1.5 * clickMult).toFixed(1);
+                const k = +(1 * clickMult).toFixed(1);
+                addResourceClamped('food', f);
+                addResourceClamped('lumber', l);
+                addResourceClamped('knowledge', k);
+                floatLabel = `+${f}粮 +${l}木 +${k}知`;
+                floatColor = '#fbbf24';
+            } else if (w.eraIndex === 2) {
+                const m = Math.round(4 * clickMult);
+                const k = Math.round(3 * clickMult);
+                addResourceClamped('money', m);
+                addResourceClamped('knowledge', k);
+                if (w.techs.copperAge) addResourceClamped('copper', 1);
+                if (w.techs.ironAge) addResourceClamped('iron', 1);
+                floatLabel = `+${m}币 +${k}知`;
+                floatColor = '#818cf8';
+            } else if (w.eraIndex === 3) {
+                const k = Math.round(15 * clickMult);
+                const m = Math.round(12 * clickMult);
+                addResourceClamped('knowledge', k);
+                addResourceClamped('money', m);
+                if (w.techs.steel) addResourceClamped('steel', 1);
+                floatLabel = `+${k}知 +${m}币`;
+                floatColor = '#f59e0b';
+            } else if (w.eraIndex === 4) {
+                const k = Math.round(50 * clickMult);
+                addResourceClamped('knowledge', k);
+                if (w.techs.nuclearFission) addResourceClamped('uranium', 0.5);
+                floatLabel = `+${k}知 +0.5铀`;
+                floatColor = '#34d399';
+            } else if (w.eraIndex === 5) {
+                const k = Math.round(200 * clickMult);
+                const m = Math.round(150 * clickMult);
+                addResourceClamped('knowledge', k);
+                addResourceClamped('money', m);
+                floatLabel = `+${k}知 +${m}币`;
+                floatColor = '#38bdf8';
+            } else {
+                const k = Math.round(600 * clickMult);
+                addResourceClamped('knowledge', k);
+                if (w.techs.rocketry) addResourceClamped('rocketParts', 1);
+                floatLabel = `+${k}知 +1部件`;
+                floatColor = '#c084fc';
+            }
+
+            const wrap = document.getElementById('canvas-wrapper');
+            if (wrap) {
+                const rect = wrap.getBoundingClientRect();
+                const cx = clientX ?? (rect.left + rect.width * 0.5);
+                const cy = clientY ?? (rect.top + rect.height * 0.45);
+                spawnFloatText(cx, cy, floatLabel, floatColor);
+                const nx = Math.max(0.1, Math.min(0.9, (cx - rect.left) / rect.width));
+                const ny = Math.max(0.1, Math.min(0.9, (cy - rect.top) / rect.height));
+                spawnParticles(nx, ny, floatColor);
+            }
+
+            checkMissions();
+            checkEraAdvancement();
+            updateUI();
+        }
+
+        function handleEraActionButton() {
+            ensureEvolveWorldFields();
+            const w = save.world;
+            const wrap = document.getElementById('canvas-wrapper');
+            const rect = wrap.getBoundingClientRect();
+            const cx = rect.left + rect.width * 0.5;
+            const cy = rect.top + rect.height * 0.4;
+
+            if (w.eraIndex === 0) {
+                if (w.techs.evo_membrane) {
+                    if ((w.res.rna || 0) >= 2 && (w.res.dna || 0) < (metrics.caps.dna || 150)) {
+                        w.res.rna -= 2;
+                        const gain = save.prestige.rapidMutation ? 2 : 1;
+                        addResourceClamped('dna', gain);
+                        sound.playTech();
+                        spawnFloatText(cx, cy, `+${gain} DNA (-2 RNA)`, '#34d399');
+                        spawnParticles(0.5, 0.5, '#34d399');
+                    } else {
+                        showToast('RNA 不足 2 或 DNA 已达上限！');
+                    }
+                } else {
+                    const gain = save.prestige.rapidMutation ? 4 : 2;
+                    addResourceClamped('rna', gain);
+                    sound.playClick();
+                    spawnFloatText(cx, cy, `+${gain} RNA`, '#34d399');
+                    spawnParticles(0.5, 0.5, '#34d399');
+                }
+            } else if (w.eraIndex === 1) {
+                addResourceClamped('lumber', 2.5);
+                addResourceClamped('stone', 1.5);
+                addResourceClamped('knowledge', 1.5);
+                sound.playClick();
+                spawnFloatText(cx, cy, '+2.5木 +1.5石 +1.5知', '#fbbf24');
+                spawnParticles(0.5, 0.5, '#fbbf24');
+            } else {
+                handleStageManualClick(cx, cy);
+                return;
+            }
+
+            checkMissions();
+            checkEraAdvancement();
+            updateUI();
+        }
+
+        /* =====================================================================
+           8. 购买科技、建造建筑、分配职业与双轨转生（核弹 MAD + 恒星际殖民方舟）
+           ===================================================================== */
+        function buyTechnology(techId) {
+            const w = save.world;
+            const tDef = TECH_MAP[techId];
+            if (!tDef || w.techs[techId]) return false;
+            if (!tDef.req.every(r => !!w.techs[r])) return false;
+            const effCost = getEffectiveTechCost(tDef);
+            if (!canAffordCost(effCost)) return false;
+
+            payCost(effCost);
+            w.techs[techId] = true;
+            sound.playTech();
+            const msg = `🔬 研究完成：【${tDef.name}】`;
+            showToast(msg);
+            if (window.EvolveModules && window.EvolveModules.EventsAchieves) {
+                window.EvolveModules.EventsAchieves.addLog({ save }, 'progress', msg, 'sky');
+            }
+
+            recomputeCapacities();
+            checkMissions();
+            checkEraAdvancement();
+            dirtyUI = true;
+            updateUI();
+            return true;
+        }
+
+        function buyBuilding(bId, isExtra = false, batchOverride = null) {
+            ensureEvolveWorldFields();
+            const w = save.world;
+            const store = isExtra ? w.extraBlds : w.buildings;
+            const bDef = isExtra ? getExtraBuildingDef(bId) : BUILDINGS_DEF.find(b => b.id === bId);
+            if (!bDef) return false;
+            if (bDef.reqTech && !w.techs[bDef.reqTech]) return false;
+
+            const owned = store[bId] || 0;
+            const maxAllowed = bDef.maxCount ? Math.max(0, bDef.maxCount - owned) : 200;
+            if (maxAllowed <= 0) return false;
+
+            const effBatch = batchOverride || getEffectiveBatch();
+            let qty = effBatch === 'MAX' ? getMaxAffordableBuilding(bDef, isExtra) : Math.min(effBatch, maxAllowed);
+            if (qty <= 0) return false;
+
+            const cost = getBuildingCost(bDef, qty, isExtra);
+            if (!canAffordCost(cost)) return false;
+
+            payCost(cost);
+            store[bId] = owned + qty;
+            sound.playBuild();
+            showToast(`🏛️ 建成 ${bDef.name} ×${qty}`);
+
+            recomputeCapacities();
+            checkMissions();
+            checkEraAdvancement();
+            dirtyUI = true;
+            updateUI();
+            return true;
+        }
+
+        function adjustJob(jobId, delta) {
+            const w = save.world;
+            const cur = w.jobs[jobId] || 0;
+            const assigned = Object.values(w.jobs).reduce((a, c) => a + c, 0);
+            const idle = Math.max(0, Math.floor(w.pop) - assigned);
+
+            if (delta > 0) {
+                const add = Math.min(delta, idle);
+                if (add <= 0) return;
+                w.jobs[jobId] = cur + add;
+            } else {
+                const sub = Math.min(-delta, cur);
+                if (sub <= 0) return;
+                w.jobs[jobId] = cur - sub;
+            }
+            sound.playClick();
+            checkMissions();
+            dirtyUI = true;
+            updateUI();
+        }
+
+        /* 第一轨转生：☢️ 相互保证毁灭（MAD 核弹重置，源自 main.js zn("mad")） */
+        function canMadResetNow() {
+            ensureEvolveWorldFields();
+            const w = save.world;
+            return w.eraIndex >= 4 && !!w.techs.nuclearFission && (w.extraBlds.missile_silo || 0) >= 1;
+        }
+
+        function calcMadPlasmidGain() {
+            ensureEvolveWorldFields();
+            const w = save.world;
+            const citizens = Math.floor(w.pop || 0);
+            const soldiers = (w.extraBlds.garrison || 0) * 3 + (w.extraBlds.missile_silo || 0) * 5;
+            const techCnt = Object.keys(w.techs).filter(k => w.techs[k]).length;
+            const base = Math.max(5, Math.round((citizens + soldiers) / 3 + techCnt * 0.4));
+            const mult = (window.EvolveModules && window.EvolveModules.Bridge)
+                ? window.EvolveModules.Bridge.computePrestigeBonusMultiplier(save, true) : 1.0;
+            return Math.max(5, Math.round(base * mult));
+        }
+
+        function triggerMadReset() {
+            if (!canMadResetNow()) {
+                showToast('需达到原子时代、研究【核裂变】并建造至少 1 座【导弹发射井】！');
+                return;
+            }
+            const gain = calcMadPlasmidGain();
+            openModal({
+                title: '☢️ 相互保证毁灭 (MAD 核弹重置)',
+                bodyHtml: `
+                    <p style="margin-bottom:8px; color:#fca5a5;">“按下红色按钮，核火洗礼大地，旧文明化为灰烬，但辐射促成了基因的极速飞跃！”</p>
+                    <div class="pixel-card" style="padding:8px; color:#f8fafc; border-color:#f43f5e;">
+                        🧬 获得质粒 / 创世余烬：<strong class="text-amber">+${gain} 枚</strong><br>
+                        ⚡ 激活永久基因特质：<strong class="text-emerald">【快速突变】(RNA/DNA进化产出×2)</strong><br>
+                        🏛️ 激活先祖遗产：<strong class="text-sky">【远古遗迹】(农业/城市时代产出+25%)</strong>
+                    </div>
+                `,
+                buttons: [
+                    { text: '取消发射', cls: 'bg-slate' },
+                    {
+                        text: `☢️ 发射核弹 (+${gain}余烬)`,
+                        cls: 'bg-rose',
+                        onClick: () => {
+                            save.prestige.count += 1;
+                            save.prestige.madCount = (save.prestige.madCount || 0) + 1;
+                            save.prestige.genesisShards += gain;
+                            save.prestige.lifetimeShards += gain;
+                            save.prestige.rapidMutation = true;
+                            save.prestige.ancientRuins = true;
+                            if (window.EvolveModules && window.EvolveModules.EventsAchieves) {
+                                window.EvolveModules.EventsAchieves.checkAchievements(window.EvolveModules.Bridge.createContext(getHostApi()));
+                            }
+                            save.world = createInitialWorld();
+                            if (window.EvolveModules && window.EvolveModules.Bridge) {
+                                window.EvolveModules.Bridge.applyNextWorldPreset(save);
+                            }
+                            save.lastActiveAt = Date.now();
+                            recomputeCapacities();
+                            saveGame(false);
+                            sound.playNuke();
+                            showToast(`☢️ 核爆重置完成！获得 ${gain} 枚质粒/余烬，已激活【快速突变】与【远古遗迹】！`);
+                            dirtyUI = true;
+                            updateUI();
+                        }
+                    }
+                ]
+            });
+        }
+
+        /* 第二轨终局转生：🚀 恒星际殖民方舟（Bioseed / Stellar Ark） */
+        function calcPrestigeGain() {
+            const w = save.world;
+            const techCnt = Object.keys(w.techs).filter(k => w.techs[k]).length;
+            const bldCnt = Object.values(w.buildings).reduce((a, c) => a + c, 0);
+            const base = Math.max(15, Math.floor(Math.sqrt(Math.floor(w.pop) / 10) + techCnt / 2 + bldCnt / 50) + 10);
+            const mult = (window.EvolveModules && window.EvolveModules.Bridge)
+                ? window.EvolveModules.Bridge.computePrestigeBonusMultiplier(save, false) : 1.0;
+            return Math.max(15, Math.round(base * mult));
+        }
+
+        function calcPhageGain() {
+            const w = save.world;
+            return Math.max(2, Math.floor(Math.sqrt(Math.floor(w.pop) / 25)) + 2);
+        }
+
+        function canPrestigeNow() {
+            const w = save.world;
+            return w.eraIndex === 6 && !!w.techs.interstellarTravel && (w.buildings.colonyShip || 0) >= 1;
+        }
+
+        function triggerPrestige() {
+            if (!canPrestigeNow()) {
+                showToast('需达到太空文明、研究【星际航行】并建造【恒星际殖民方舟】！');
+                return;
+            }
+            const gain = calcPrestigeGain();
+            const phageGain = calcPhageGain();
+            openModal({
+                title: '🚀 启动恒星际文明跃迁 (Bioseed / 方舟播种)',
+                bodyHtml: `
+                    <p style="margin-bottom:8px;">恒星际殖民方舟已装载基因库准备启航！飞向新星系将重置当前行星进度并获得高等传承：</p>
+                    <div class="pixel-card" style="padding:8px; color:#c084fc; font-weight:bold;">
+                        🔥 获得质粒 / 创世余烬：+${gain} 枚<br>
+                        🦠 获得噬菌体 (Phage)：+${phageGain} 枚 (全资源仓储上限 +${phageGain * 5}% & 产能 +${phageGain * 3}%)<br>
+                        ✨ 激活/保留【快速突变】与【远古遗迹】特质
+                    </div>
+                `,
+                buttons: [
+                    { text: '取消', cls: 'bg-slate' },
+                    {
+                        text: `🚀 启航播种 (+${gain}余烬 +${phageGain}噬菌体)`,
+                        cls: 'bg-purple',
+                        onClick: () => {
+                            save.prestige.count += 1;
+                            save.prestige.arkCount = (save.prestige.arkCount || 0) + 1;
+                            save.prestige.genesisShards += gain;
+                            save.prestige.lifetimeShards += gain;
+                            save.prestige.phage = (save.prestige.phage || 0) + phageGain;
+                            save.prestige.rapidMutation = true;
+                            save.prestige.ancientRuins = true;
+                            if (window.EvolveModules && window.EvolveModules.EventsAchieves) {
+                                window.EvolveModules.EventsAchieves.checkAchievements(window.EvolveModules.Bridge.createContext(getHostApi()));
+                            }
+                            save.world = createInitialWorld();
+                            if (window.EvolveModules && window.EvolveModules.Bridge) {
+                                window.EvolveModules.Bridge.applyNextWorldPreset(save);
+                            }
+                            save.lastActiveAt = Date.now();
+                            recomputeCapacities();
+                            saveGame(false);
+                            sound.playEra();
+                            showToast(`🚀 星际播种成功！获得 ${gain} 余烬与 ${phageGain} 噬菌体！`);
+                            dirtyUI = true;
+                            updateUI();
+                        }
+                    }
+                ]
+            });
+        }
+
+        function buyPerk(perkId) {
+            const pDef = PERKS_DEF.find(p => p.id === perkId);
+            if (!pDef) return;
+            const lv = getPerkLevel(perkId);
+            if (lv >= 5) return;
+            const cost = pDef.costs[lv];
+            if ((save.prestige.genesisShards || 0) < cost) return;
+
+            save.prestige.genesisShards -= cost;
+            save.prestige.perks[perkId] = lv + 1;
+            sound.playTech();
+            showToast(`✨ 永久天赋升级：【${pDef.name}】Lv.${lv + 1}`);
+            saveGame(false);
+            dirtyUI = true;
+            updateUI();
+        }
+
+        /* =====================================================================
+           9. 离屏 64×64 像素动画引擎（严格节流 15 FPS + 后台自动休眠）
+           ===================================================================== */
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = 64;
+        offCanvas.height = 64;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.imageSmoothingEnabled = false;
+
+        const mainCanvas = document.getElementById('pixel-canvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        mainCtx.imageSmoothingEnabled = false;
+
+        let animTick = 0;
+
+        function pxRect(x, y, w, h, color) {
+            offCtx.fillStyle = color;
+            offCtx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
+        }
+
+        function renderPixelScene() {
+            animTick++;
+            const w = save.world;
+            const era = ERAS_DEF[w.eraIndex] || ERAS_DEF[0];
+
+            // 天空/背景渐变色块
+            pxRect(0, 0, 64, 42, era.bgTop);
+            pxRect(0, 42, 64, 22, era.bgBot);
+
+            const t = animTick * 0.25;
+
+            if (w.eraIndex === 0) {
+                // 时代 1：生命起源 - 旋转 DNA 双螺旋 + 细胞器/线粒体漂浮微粒
+                const orgCount = Math.min(8, 4 + ((w.evoCells && w.evoCells.organelles) || 0));
+                for (let i = 0; i < orgCount; i++) {
+                    const bx = (i * 11 + Math.floor(t * 2)) % 60 + 2;
+                    const by = 56 - ((i * 9 + Math.floor(t * 3)) % 50);
+                    pxRect(bx, by, 2, 2, i % 2 === 0 ? 'rgba(56, 189, 248, 0.45)' : 'rgba(168, 85, 247, 0.45)');
+                }
+                for (let y = 10; y < 54; y += 3) {
+                    const phase = y * 0.22 + t;
+                    const x1 = 32 + Math.sin(phase) * 12;
+                    const x2 = 32 - Math.sin(phase) * 12;
+                    if (y % 6 === 0) {
+                        const minX = Math.min(x1, x2);
+                        const len = Math.abs(x1 - x2);
+                        pxRect(minX, y, len, 1, '#38bdf8');
+                    }
+                    pxRect(x1 - 1, y - 1, 3, 3, '#10b981');
+                    pxRect(x2 - 1, y - 1, 3, 3, '#f59e0b');
+                }
+            } else if (w.eraIndex === 1) {
+                // 时代 2：农业文明 - 茅草屋、摇曳麦田、飘动白云与小人
+                const cloudX = (Math.floor(t * 1.5)) % 76 - 12;
+                pxRect(cloudX, 8, 12, 4, '#cbd5e1');
+                pxRect(cloudX + 2, 6, 8, 2, '#f8fafc');
+
+                pxRect(0, 38, 64, 26, '#15803d');
+                pxRect(0, 48, 64, 16, '#14532d');
+                const sway = Math.round(Math.sin(t));
+                for (let gx = 4; gx < 34; gx += 4) {
+                    pxRect(gx + sway, 40, 2, 7, '#eab308');
+                }
+                pxRect(38, 28, 18, 12, '#92400e');
+                pxRect(35, 24, 24, 4, '#d97706');
+                pxRect(39, 21, 16, 3, '#f59e0b');
+                pxRect(45, 33, 4, 7, '#451a03');
+                const walk = Math.round(Math.sin(t * 1.5) * 3);
+                pxRect(26 + walk, 32, 3, 3, '#fde68a');
+                pxRect(26 + walk, 35, 3, 4, '#38bdf8');
+            } else if (w.eraIndex === 2) {
+                // 时代 3：城市文明 - 石砌城墙、冶炼炉火光与市场旗帜
+                pxRect(0, 42, 64, 22, '#334155');
+                pxRect(6, 20, 14, 22, '#64748b');
+                pxRect(6, 17, 3, 3, '#94a3b8');
+                pxRect(12, 17, 3, 3, '#94a3b8');
+                pxRect(17, 17, 3, 3, '#94a3b8');
+                pxRect(26, 24, 20, 18, '#7c2d12');
+                pxRect(24, 21, 24, 3, '#b45309');
+                const flame = (animTick % 4 < 2) ? '#f97316' : '#facc15';
+                pxRect(33, 33, 6, 9, flame);
+                pxRect(49, 30, 12, 12, '#4338ca');
+                pxRect(48, 28, 14, 3, '#ec4899');
+            } else if (w.eraIndex === 3) {
+                // 时代 4：工业文明 - 钢铁厂房、高耸烟囱与沃登克里弗电塔
+                pxRect(0, 44, 64, 20, '#1e293b');
+                pxRect(10, 24, 34, 20, '#475569');
+                pxRect(14, 12, 5, 12, '#334155');
+                pxRect(28, 10, 5, 14, '#334155');
+                for (let wx = 14; wx <= 36; wx += 6) {
+                    pxRect(wx, 30, 3, 4, '#fbbf24');
+                }
+                for (let s = 0; s < 3; s++) {
+                    const sy = 8 - ((animTick + s * 3) % 8);
+                    const sx = 15 + ((animTick + s * 2) % 6);
+                    pxRect(sx, sy, 4, 3, '#94a3b8');
+                    pxRect(sx + 14, sy - 2, 4, 3, '#cbd5e1');
+                }
+                pxRect(52, 18, 2, 26, '#94a3b8');
+                pxRect(48, 22, 10, 2, '#38bdf8');
+            } else if (w.eraIndex === 4) {
+                // 时代 5：原子时代 - 双曲冷却塔、切伦科夫反应堆与战略导弹发射井
+                pxRect(0, 45, 64, 19, '#0f291e');
+                pxRect(8, 20, 14, 25, '#cbd5e1');
+                pxRect(10, 16, 10, 4, '#e2e8f0');
+                pxRect(26, 26, 20, 19, '#334155');
+                pxRect(29, 21, 14, 5, '#475569');
+                const glow = (animTick % 6 < 3) ? '#10b981' : '#6ee7b7';
+                pxRect(32, 31, 8, 8, glow);
+                // 核弹发射井
+                if (w.extraBlds && (w.extraBlds.missile_silo || 0) > 0) {
+                    pxRect(50, 22, 8, 23, '#475569');
+                    pxRect(52, 16, 4, 6, '#f43f5e');
+                }
+            } else if (w.eraIndex === 5) {
+                // 时代 6：信息文明 - 量子服务器阵列与神经网络光束
+                pxRect(0, 46, 64, 18, '#09111e');
+                for (let rx = 8; rx <= 44; rx += 18) {
+                    pxRect(rx, 16, 12, 30, '#1e293b');
+                    for (let ly = 19; ly <= 40; ly += 5) {
+                        const led = ((animTick + rx + ly) % 5 === 0) ? '#38bdf8' : '#10b981';
+                        pxRect(rx + 2, ly, 3, 2, led);
+                        pxRect(rx + 7, ly, 3, 2, '#6366f1');
+                    }
+                }
+                const dx = (animTick * 4) % 56 + 4;
+                pxRect(dx, 9, 6, 2, '#38bdf8');
+            } else {
+                // 时代 7：太空文明 - 星空、火星星球、航天发射台与殖民方舟火箭
+                for (let i = 0; i < 14; i++) {
+                    const sx = (i * 17 + 5) % 62;
+                    const sy = (i * 13 + 3) % 38;
+                    pxRect(sx, sy, 1, 1, (animTick + i) % 4 === 0 ? '#f8fafc' : '#64748b');
+                }
+                pxRect(46, 8, 10, 10, '#ea580c');
+                pxRect(48, 10, 4, 3, '#fb923c');
+                pxRect(0, 46, 64, 18, '#1e1b4b');
+                pxRect(18, 22, 3, 24, '#64748b');
+                const hover = Math.round(Math.sin(t) * 1);
+                pxRect(26, 16 + hover, 8, 22, '#f8fafc');
+                pxRect(28, 12 + hover, 4, 4, '#ef4444');
+                pxRect(24, 32 + hover, 2, 6, '#38bdf8');
+                pxRect(34, 32 + hover, 2, 6, '#38bdf8');
+                const thr = (animTick % 2 === 0) ? '#f59e0b' : '#ef4444';
+                pxRect(28, 38 + hover, 4, 5, thr);
+            }
+
+            // 气象雨雪与月相像素叠加特效
+            if (window.EvolveModules && window.EvolveModules.Bridge) {
+                window.EvolveModules.Bridge.renderSceneOverlay(offCtx, animTick, pxRect, w);
+            }
+
+            // 更新并绘制粒子池
+            for (let i = 0; i < PARTICLE_MAX; i++) {
+                const p = particlePool[i];
+                if (!p.active) continue;
+                p.x += p.vx * 0.066;
+                p.y += p.vy * 0.066;
+                p.vy += 24 * 0.066;
+                p.life -= 0.066;
+                if (p.life <= 0) {
+                    p.active = false;
+                } else {
+                    pxRect(p.x, p.y, 2, 2, p.color);
+                }
+            }
+
+            mainCtx.clearRect(0, 0, 64, 64);
+            mainCtx.drawImage(offCanvas, 0, 0);
+        }
+
+        /* =====================================================================
+           10. 差量 DOM 渲染（列表结构仅在脏标记时重建，250ms Tick 只做文本与状态更新）
+           ===================================================================== */
+        let dirtyUI = true;
+
+        function buildLeftResourceCards() {
+            const grid = document.getElementById('left-res-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            RESOURCES_DEF.forEach(r => {
+                const card = document.createElement('div');
+                card.id = `lres-card-${r.id}`;
+                card.className = 'res-mini-card hidden';
+                card.dataset.resId = r.id;
+                card.innerHTML = `
+                    <div class="res-mini-left">
+                        <span class="res-mini-name">${r.name}</span>
+                        <span id="lres-cap-${r.id}" class="res-mini-cap">0/${r.baseCap}</span>
+                    </div>
+                    <div class="res-mini-right">
+                        <span id="lres-rate-${r.id}" class="res-mini-rate text-muted">0.0/s</span>
+                        <span id="lres-eta-${r.id}" class="res-mini-eta">平衡</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function updateLeftResourceCards() {
+            const w = save.world;
+            let unlockedCount = 0;
+            for (const r of RESOURCES_DEF) {
+                const isUnlocked = !!w.unlockedRes[r.id];
+                const card = document.getElementById(`lres-card-${r.id}`);
+                if (!card) continue;
+                if (!isUnlocked) {
+                    card.classList.add('hidden');
+                    continue;
+                }
+                unlockedCount++;
+                card.classList.remove('hidden');
+
+                const val = w.res[r.id] || 0;
+                const cap = metrics.caps[r.id] || r.baseCap;
+                const net = metrics.netRates[r.id] || 0;
+
+                const capEl = document.getElementById(`lres-cap-${r.id}`);
+                const rateEl = document.getElementById(`lres-rate-${r.id}`);
+                const etaEl = document.getElementById(`lres-eta-${r.id}`);
+
+                if (capEl) capEl.textContent = `${fmt(val)}/${fmt(cap)}`;
+                if (rateEl) {
+                    rateEl.textContent = fmtRate(net);
+                    rateEl.className = `res-mini-rate ${net > 0.05 ? 'text-emerald' : (net < -0.05 ? 'text-rose' : 'text-muted')}`;
+                }
+                if (etaEl) {
+                    if (net > 0.05 && val < cap) {
+                        const sec = Math.ceil((cap - val) / net);
+                        etaEl.textContent = sec > 9999 ? '满:>9999s' : `满:${sec}s`;
+                    } else if (net < -0.05 && val > 0) {
+                        const sec = Math.ceil(val / Math.abs(net));
+                        etaEl.textContent = `空:${sec}s`;
+                    } else {
+                        etaEl.textContent = '平衡';
+                    }
+                }
+            }
+            const cntEl = document.getElementById('left-res-count');
+            if (cntEl) cntEl.textContent = `已解锁 ${unlockedCount}/26`;
+        }
+
+        function formatCostInline(costObj) {
+            return Object.entries(costObj)
+                .map(([rId, amt]) => {
+                    const name = RES_MAP[rId] ? RES_MAP[rId].name : rId;
+                    const have = save.world.res[rId] || 0;
+                    const cls = have >= amt ? 'text-emerald' : 'text-rose';
+                    return `<span class="${cls}">${name}:${fmt(amt)}</span>`;
+                })
+                .join(' ');
+        }
+
+        /* 完整重建当前 Tab 内容（委托给 EvolveModules.UI 子页签系统，支持全部增强系统） */
+        function renderTabContent() {
+            ensureEvolveWorldFields();
+            const container = document.getElementById('tab-content');
+            if (!container) return;
+            container.innerHTML = '';
+            if (window.EvolveModules && window.EvolveModules.UI) {
+                const host = getHostApi();
+                window.EvolveModules.UI.renderSubTabBar(host, activeTab);
+                window.EvolveModules.UI.renderSubTabContent(host, container, activeTab);
+            }
+        }
+
+        /* 差量刷新全局 UI（250ms Tick 调用，不重建列表，零卡顿） */
+        function updateUI() {
+            ensureEvolveWorldFields();
+            const w = save.world;
+            const era = ERAS_DEF[w.eraIndex] || ERAS_DEF[0];
+
+            // 顶部时代、城市头衔、物种徽章与 KPI
+            document.getElementById('hdr-era-icon').textContent = era.icon;
+            document.getElementById('hdr-era-step').textContent = `时代 ${w.eraIndex + 1}/7`;
+            document.getElementById('hdr-era-name').textContent = era.name;
+            const bonusPct = Math.round((getShardMultiplier() - 1) * 100);
+            document.getElementById('hdr-shards').textContent = fmt(save.prestige.genesisShards || 0);
+            document.getElementById('hdr-shard-bonus').textContent = `+${bonusPct}%`;
+
+            const cityTitleEl = document.getElementById('hdr-city-title');
+            const speciesEl = document.getElementById('hdr-species-badge');
+            const dl = window.EvolveModules && window.EvolveModules.DataLoader;
+            const curSpec = (dl && dl.MAPS.species[w.species]) || EVOLVE_SPECIES_DEF.find(s => s.id === w.species) || EVOLVE_SPECIES_DEF[0];
+            if (w.eraIndex >= 1) {
+                cityTitleEl.textContent = `[${getCityTitle(w.pop)}]`;
+                cityTitleEl.classList.remove('hidden');
+                speciesEl.textContent = `${curSpec.icon}${curSpec.name.split(' ')[0]}`;
+                speciesEl.classList.remove('hidden');
+            } else {
+                cityTitleEl.classList.add('hidden');
+                speciesEl.classList.add('hidden');
+            }
+
+            if (window.EvolveModules && window.EvolveModules.UI) {
+                window.EvolveModules.UI.updateTopWeatherBar(getHostApi());
+            }
+
+            const popBox = document.getElementById('kpi-pop-box');
+            if (w.eraIndex === 0) {
+                popBox.classList.add('hidden');
+                document.getElementById('hdr-kpi1-label').textContent = 'RNA';
+                document.getElementById('hdr-kpi1-val').textContent = `${fmt(w.res.rna)}/${fmt(metrics.caps.rna)}`;
+                document.getElementById('hdr-kpi2-label').textContent = 'DNA';
+                document.getElementById('hdr-kpi2-val').textContent = `${fmt(w.res.dna)}/${fmt(metrics.caps.dna)}`;
+            } else {
+                popBox.classList.remove('hidden');
+                document.getElementById('hdr-pop').textContent = `${Math.floor(w.pop)}/${metrics.popCap}`;
+                document.getElementById('hdr-happy').textContent = `${w.happiness}%`;
+                document.getElementById('hdr-kpi1-label').textContent = '食物';
+                document.getElementById('hdr-kpi1-val').textContent = `${fmt(w.res.food)}/${fmt(metrics.caps.food)}`;
+                document.getElementById('hdr-kpi2-label').textContent = '知识';
+                document.getElementById('hdr-kpi2-val').textContent = `${fmt(w.res.knowledge)}/${fmt(metrics.caps.knowledge)}`;
+            }
+
+            // 顶部任务条
+            const mIdx = w.missionIndex;
+            if (mIdx < MISSIONS_DEF.length) {
+                const m = MISSIONS_DEF[mIdx];
+                document.getElementById('hdr-mission-id').textContent = `[${m.id}]`;
+                document.getElementById('hdr-mission-text').textContent = `${m.name}：${m.desc}`;
+            } else {
+                document.getElementById('hdr-mission-id').textContent = '[通关]';
+                document.getElementById('hdr-mission-text').textContent = '全部 51 项主线任务已完成！可随时启动方舟跃迁！';
+            }
+            document.getElementById('hdr-mission-prog').textContent = `${mIdx}/51`;
+
+            // 左侧舞台信息
+            document.getElementById('stage-lore').textContent = era.desc;
+            document.getElementById('stat-clicks').textContent = w.clicks || 0;
+            document.getElementById('canvas-caption').textContent = w.eraIndex === 0 ? '+RNA' : (w.eraIndex === 1 ? '+食物/木/知' : '+时代资源');
+
+            // 左侧底部双操作按钮
+            const actBtn = document.getElementById('btn-era-action');
+            const actTitle = document.getElementById('btn-era-action-title');
+            const actSub = document.getElementById('btn-era-action-sub');
+            actBtn.className = `pixel-btn action-main-btn ${era.actionBtn.color}`;
+            if (w.eraIndex === 0) {
+                if (w.techs.evo_membrane) {
+                    const dnaGain = save.prestige.rapidMutation ? 2 : 1;
+                    actTitle.textContent = `🧬 合成 DNA (2RNA→${dnaGain})`;
+                    actBtn.disabled = (w.res.rna || 0) < 2;
+                } else {
+                    actTitle.textContent = era.actionBtn.title;
+                    actBtn.disabled = false;
+                }
+                actSub.textContent = `RNA:${fmt(w.res.rna)}/${metrics.caps.rna} | DNA:${fmt(w.res.dna)}/${metrics.caps.dna}`;
+            } else if (w.eraIndex === 1) {
+                actTitle.textContent = era.actionBtn.title;
+                actBtn.disabled = false;
+                actSub.textContent = `木:${fmt(w.res.lumber)} 石:${fmt(w.res.stone)} 知:${fmt(w.res.knowledge)}`;
+            } else {
+                actTitle.textContent = era.actionBtn.title;
+                actBtn.disabled = false;
+                actSub.textContent = `币:${fmt(w.res.money)} 知:${fmt(w.res.knowledge)}`;
+            }
+
+            const nextBtn = document.getElementById('btn-next-era');
+            const nextTitle = document.getElementById('btn-next-era-title');
+            const nextSub = document.getElementById('btn-next-era-sub');
+            if (canMadResetNow() && w.eraIndex < 6) {
+                nextTitle.textContent = `☢️ 核弹重置就绪 (+${calcMadPlasmidGain()}余烬)`;
+                nextSub.textContent = '点击前往【核爆/跃迁】发射核弹或继续冲刺太空';
+                nextBtn.className = 'pixel-btn action-main-btn bg-rose';
+                nextBtn.disabled = false;
+            } else if (w.eraIndex < ERAS_DEF.length - 1) {
+                nextTitle.textContent = `下一时代: ${ERAS_DEF[w.eraIndex + 1].name}`;
+                nextSub.textContent = era.nextReqText;
+                nextBtn.className = 'pixel-btn action-main-btn bg-slate';
+                nextBtn.disabled = true;
+            } else {
+                const canP = canPrestigeNow();
+                nextTitle.textContent = canP ? '🚀 启动恒星际跃迁' : '终局时代: 太空文明';
+                nextSub.textContent = canP ? `可获得 +${calcPrestigeGain()} 创世余烬` : era.nextReqText;
+                nextBtn.className = `pixel-btn action-main-btn ${canP ? 'bg-purple' : 'bg-slate'}`;
+                nextBtn.disabled = !canP;
+            }
+
+            // 更新左侧全文明资源监控卡片
+            updateLeftResourceCards();
+
+            // 更新 Tab 小圆点徽章
+            const canEvo = EVO_CHAIN_IDS.some(id => {
+                const t = TECH_MAP[id];
+                return !w.techs[id] && t.req.every(r => !!w.techs[r]) && canAffordCost(getEffectiveTechCost(t));
+            }) || (w.eraIndex === 0 && EVOLVE_CELL_STRUCTURES_DEF.some(c => (!c.reqEvo || w.techs[c.reqEvo]) && canAffordCost(getCellStructureCost(c))));
+            const assigned = Object.values(w.jobs).reduce((a, c) => a + c, 0);
+            const hasIdle = w.eraIndex >= 1 && (Math.floor(w.pop) - assigned) > 0;
+            document.getElementById('badge-evo').classList.toggle('show', canEvo || hasIdle);
+
+            const canTech = TECHS_DEF.some(t => !w.techs[t.id] && t.era <= w.eraIndex && t.req.every(r => !!w.techs[r]) && canAffordCost(getEffectiveTechCost(t)));
+            document.getElementById('badge-tech').classList.toggle('show', canTech);
+
+            const allExtraDefs = [...EVOLVE_EXTRA_BLDS_DEF, ...((dl && dl.DATA.extraBuildings) || [])];
+            const canBld = BUILDINGS_DEF.some(b => (!b.reqTech || w.techs[b.reqTech]) && (!b.maxCount || (w.buildings[b.id] || 0) < b.maxCount) && canAffordCost(getBuildingCost(b, 1)))
+                || allExtraDefs.some(b => (!b.reqTech || w.techs[b.reqTech]) && (!b.maxCount || (w.extraBlds[b.id] || 0) < b.maxCount) && canAffordCost(getBuildingCost(b, 1, true)));
+            document.getElementById('badge-bld').classList.toggle('show', canBld);
+
+            document.getElementById('badge-prestige').classList.toggle('show', canPrestigeNow() || canMadResetNow());
+
+            // 局部增量刷新当前激活 Tab 内的动态文本，避免整页重建破坏点击
+            const effBatch = getEffectiveBatch();
+            if (dirtyUI) {
+                dirtyUI = false;
+                renderTabContent();
+            } else {
+                if (activeTab === 'evo') {
+                if (w.eraIndex === 0) {
+                    document.querySelectorAll('#tab-content button[data-cell]').forEach(btn => {
+                        const cDef = EVOLVE_CELL_STRUCTURES_DEF.find(c => c.id === btn.dataset.cell);
+                        if (!cDef) return;
+                        const ok = canAffordCost(getCellStructureCost(cDef));
+                        btn.disabled = !ok;
+                        btn.className = `pixel-btn ${ok ? 'bg-amber' : 'bg-slate'} text-11 font-bold shrink-0`;
+                    });
+                } else {
+                    const idleEl = document.getElementById('job-idle-cnt');
+                    const totEl = document.getElementById('job-total-cnt');
+                    const rateEl = document.getElementById('pop-growth-rate');
+                    const detEl = document.getElementById('pop-growth-detail');
+                    const recBtn = document.getElementById('btn-recruit-pop');
+
+                    if (idleEl) idleEl.textContent = Math.max(0, Math.floor(w.pop) - assigned);
+                    if (totEl) totEl.textContent = Math.floor(w.pop);
+                    if (rateEl) rateEl.textContent = `+${metrics.popGrowthRate.toFixed(2)} 人/秒`;
+                    if (detEl) detEl.textContent = `基础 +${metrics.popBaseRate.toFixed(2)}/s | 空房引力 +${metrics.popVacancyBonus.toFixed(2)}/s | 繁荣倍率 ×${metrics.popProsperityMult.toFixed(1)}`;
+                    if (recBtn) {
+                        const vacant = Math.max(0, metrics.popCap - Math.floor(w.pop));
+                        const rCost = getRecruitFoodCost();
+                        const rGain = Math.min(2, vacant);
+                        const ok = rGain > 0 && (w.res.food || 0) >= rCost;
+                        recBtn.disabled = !ok;
+                        recBtn.className = `pixel-btn ${ok ? 'bg-emerald' : 'bg-slate'} text-11 font-bold shrink-0`;
+                        recBtn.textContent = vacant <= 0 ? '住房已满' : `📣 吸引流民 (+${rGain}人 / ${fmt(rCost)}食物)`;
+                    }
+                }
+                document.querySelectorAll('#tab-content button[data-research]').forEach(btn => {
+                    const tDef = TECH_MAP[btn.dataset.research];
+                    if (!tDef || w.techs[tDef.id]) return;
+                    const reqOk = tDef.req.every(r => !!w.techs[r]);
+                    const ok = reqOk && canAffordCost(getEffectiveTechCost(tDef));
+                    btn.disabled = !ok;
+                    btn.className = `pixel-btn ${ok ? 'bg-emerald' : 'bg-slate'} text-11 font-bold shrink-0`;
+                });
+            } else if (activeTab === 'bld' || activeTab === 'tech') {
+                document.querySelectorAll('#tab-content button[data-build]').forEach(btn => {
+                    const bDef = BUILDINGS_DEF.find(b => b.id === btn.dataset.build);
+                    if (!bDef) return;
+                    const owned = w.buildings[bDef.id] || 0;
+                    const maxed = bDef.maxCount && owned >= bDef.maxCount;
+                    if (maxed) return;
+                    const qty = effBatch === 'MAX' ? Math.max(1, getMaxAffordableBuilding(bDef)) : effBatch;
+                    const ok = effBatch === 'MAX' ? getMaxAffordableBuilding(bDef) >= 1 : canAffordCost(getBuildingCost(bDef, qty));
+                    btn.disabled = !ok;
+                    btn.className = `pixel-btn ${ok ? 'bg-amber' : 'bg-slate'} text-11 font-bold`;
+                });
+                document.querySelectorAll('#tab-content button[data-extra-build]').forEach(btn => {
+                    const bDef = getExtraBuildingDef(btn.dataset.extraBuild);
+                    if (!bDef) return;
+                    const qty = effBatch === 'MAX' ? Math.max(1, getMaxAffordableBuilding(bDef, true)) : effBatch;
+                    const ok = effBatch === 'MAX' ? getMaxAffordableBuilding(bDef, true) >= 1 : canAffordCost(getBuildingCost(bDef, qty, true));
+                    btn.disabled = !ok;
+                    btn.className = `pixel-btn ${ok ? 'bg-purple' : 'bg-slate'} text-11 font-bold`;
+                });
+                document.querySelectorAll('#tab-content button[data-research]').forEach(btn => {
+                    const tDef = TECH_MAP[btn.dataset.research];
+                    if (!tDef || w.techs[tDef.id]) return;
+                    const reqOk = tDef.req.every(r => !!w.techs[r]);
+                    const ok = reqOk && canAffordCost(getEffectiveTechCost(tDef));
+                    btn.disabled = !ok;
+                    btn.className = `pixel-btn ${ok ? 'bg-sky' : 'bg-slate'} text-11 font-bold`;
+                });
+                }
+                if (window.EvolveModules && window.EvolveModules.UI && window.EvolveModules.UI.refreshLiveWidgets) {
+                    window.EvolveModules.UI.refreshLiveWidgets(getHostApi());
+                }
+            }
+        }
+
+        /* =====================================================================
+           11. 存档、离线收益追赶与导入/导出
+           ===================================================================== */
+        function applySettings() {
+            document.body.classList.toggle('crt-enabled', !!save.settings.crt);
+            if (window.EvolveModules && window.EvolveModules.DataLoader) {
+                window.EvolveModules.DataLoader.applyTheme(save.settings.theme || 'pixel');
+            }
+        }
+
+        function saveGame(notify = true) {
+            try {
+                save.lastActiveAt = Date.now();
+                localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+                if (notify) showToast('💾 游戏进度已保存！');
+            } catch (_) {}
+        }
+
+        function loadGame() {
+            try {
+                const raw = localStorage.getItem(SAVE_KEY);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== 'object') return;
+                save = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SAVE)), parsed);
+                save.world = Object.assign(createInitialWorld(), parsed.world || {});
+                save.prestige = Object.assign({ count: 0, madCount: 0, arkCount: 0, genesisShards: 0, lifetimeShards: 0, phage: 0, rapidMutation: false, ancientRuins: false, perks: {} }, parsed.prestige || {});
+                save.settings = Object.assign({ sound: true, crt: false }, parsed.settings || {});
+                ensureEvolveWorldFields();
+
+                recomputeCapacities();
+                checkMissions();
+                checkEraAdvancement();
+
+                // 计算离线收益（受深度休眠天赋 8~48 小时上限约束）
+                const maxHours = [8, 12, 18, 24, 36, 48][getPerkLevel('deepHibernation')] || 8;
+                const elapsedSec = Math.min(maxHours * 3600, Math.max(0, (Date.now() - (save.lastActiveAt || Date.now())) / 1000));
+                if (elapsedSec >= 10) {
+                    const steps = Math.min(360, Math.floor(elapsedSec / 2));
+                    const stepDt = elapsedSec / steps;
+                    for (let i = 0; i < steps; i++) {
+                        stepSimulation(stepDt);
+                    }
+                    checkMissions();
+                    checkEraAdvancement();
+                    showToast(`💤 欢迎回来！已结算 ${Math.floor(elapsedSec / 60)} 分钟离线收益`);
+                }
+            } catch (_) {}
+        }
+
+        function exportSaveCode() {
+            saveGame(false);
+            const code = btoa(unescape(encodeURIComponent(JSON.stringify(save))));
+            openModal({
+                title: '📤 导出跨设备存档码',
+                bodyHtml: '请复制下方 Base64 存档码，在另一台设备点击【导入存档码】即可无缝同步进度：',
+                showTextarea: true,
+                textareaValue: code,
+                readonly: true,
+                buttons: [
+                    { text: '关闭', cls: 'bg-slate' },
+                    {
+                        text: '📋 复制存档码',
+                        cls: 'bg-sky',
+                        close: false,
+                        onClick: () => {
+                            const ta = document.getElementById('modal-textarea');
+                            ta.select();
+                            try {
+                                document.execCommand('copy');
+                                showToast('📋 存档码已复制到剪贴板！');
+                            } catch (_) {
+                                showToast('请手动长按全选复制！');
+                            }
+                        }
+                    }
+                ]
+            });
+        }
+
+        function importSaveCode() {
+            openModal({
+                title: '📥 导入存档码',
+                bodyHtml: '请在下方粘贴之前导出的 Base64 存档码：',
+                showTextarea: true,
+                textareaValue: '',
+                readonly: false,
+                buttons: [
+                    { text: '取消', cls: 'bg-slate' },
+                    {
+                        text: '✅ 确认导入',
+                        cls: 'bg-emerald',
+                        onClick: (val) => {
+                            try {
+                                const trimmed = (val || '').trim();
+                                if (!trimmed) return;
+                                const jsonStr = decodeURIComponent(escape(atob(trimmed)));
+                                const parsed = JSON.parse(jsonStr);
+                                if (!parsed || !parsed.world) throw new Error('Invalid');
+                                localStorage.setItem(SAVE_KEY, JSON.stringify(parsed));
+                                loadGame();
+                                applySettings();
+                                dirtyUI = true;
+                                updateUI();
+                                showToast('🎉 存档导入成功！');
+                            } catch (_) {
+                                showToast('❌ 存档码格式无效，导入失败！');
+                            }
+                        }
+                    }
+                ]
+            });
+        }
+
+        function hardResetGame() {
+            openModal({
+                title: '⚠️ 确认清空全部存档？',
+                bodyHtml: '此操作将彻底清除当前进度与创世余烬并从头开始，无法撤销！',
+                buttons: [
+                    { text: '取消', cls: 'bg-slate' },
+                    {
+                        text: '🗑️ 确认清空',
+                        cls: 'bg-rose',
+                        onClick: () => {
+                            localStorage.removeItem(SAVE_KEY);
+                            save = JSON.parse(JSON.stringify(DEFAULT_SAVE));
+                            applySettings();
+                            recomputeCapacities();
+                            dirtyUI = true;
+                            updateUI();
+                            showToast('🗑️ 存档已重置为全新宇宙！');
+                        }
+                    }
+                ]
+            });
+        }
+
+        /* =====================================================================
+           12. 事件绑定与主循环启动
+           ===================================================================== */
+        function switchTab(nextTab, subTabId) {
+            if (subTabId && window.EvolveModules && window.EvolveModules.UI) {
+                window.EvolveModules.UI.setSubTab(nextTab, subTabId);
+            }
+            if (activeTab === nextTab && !subTabId) return;
+            activeTab = nextTab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === activeTab));
+            dirtyUI = true;
+            updateUI();
+        }
+
+        function bindEvents() {
+            // 1. 像素舞台单次点击采集
+            const canvasWrap = document.getElementById('canvas-wrapper');
+            canvasWrap.addEventListener('pointerdown', e => {
+                e.preventDefault();
+                handleStageManualClick(e.clientX, e.clientY);
+            });
+
+            document.getElementById('btn-stage-hint').addEventListener('pointerdown', e => {
+                e.preventDefault();
+                handleStageManualClick();
+            });
+
+            // 顶部快捷导航
+            document.getElementById('hdr-mission-banner').addEventListener('click', () => switchTab('prestige', 'pres_perks'));
+            document.getElementById('kpi-pill-prestige').addEventListener('click', () => switchTab('prestige', 'pres_crispr'));
+            document.getElementById('kpi-pop-box').addEventListener('click', () => switchTab('evo', 'evo_pop'));
+            document.getElementById('kpi-pill-1').addEventListener('click', () => switchTab('sys', 'sys_wiki'));
+            document.getElementById('kpi-pill-2').addEventListener('click', () => switchTab('sys', 'sys_wiki'));
+            const weatherStrip = document.getElementById('hdr-weather-strip');
+            if (weatherStrip) {
+                weatherStrip.style.cursor = 'pointer';
+                weatherStrip.addEventListener('click', () => switchTab('sys', 'sys_ach'));
+            }
+            const leftResGrid = document.getElementById('left-res-grid');
+            if (leftResGrid) {
+                leftResGrid.style.cursor = 'pointer';
+                leftResGrid.addEventListener('click', () => {
+                    if (window.getSelection && window.getSelection().toString()) return;
+                    if (save.world.eraIndex >= 1) switchTab('bld', 'bld_storage');
+                    else switchTab('sys', 'sys_wiki');
+                });
+            }
+
+            // 2. 键盘空格采集 + Ctrl(10x) / Shift(25x) / Alt(100x) 修饰键批买联动
+            const updateModifierFromEvent = (e) => {
+                if (!save.settings || save.settings.mKeys === false) {
+                    if (modifierBatch !== 0) {
+                        modifierBatch = 0;
+                        dirtyUI = true;
+                        updateUI();
+                    }
+                    return;
+                }
+                const nextMod = e.altKey ? 100 : (e.shiftKey ? 25 : (e.ctrlKey || e.metaKey ? 10 : 0));
+                if (nextMod !== modifierBatch) {
+                    modifierBatch = nextMod;
+                    dirtyUI = true;
+                    updateUI();
+                }
+            };
+            window.addEventListener('keydown', e => {
+                const tag = document.activeElement ? document.activeElement.tagName : '';
+                if (e.code === 'Space' && !e.repeat && tag !== 'TEXTAREA' && tag !== 'INPUT' && tag !== 'SELECT') {
+                    e.preventDefault();
+                    handleStageManualClick();
+                }
+                updateModifierFromEvent(e);
+            });
+            window.addEventListener('keyup', updateModifierFromEvent);
+            window.addEventListener('blur', () => {
+                if (modifierBatch !== 0) {
+                    modifierBatch = 0;
+                    dirtyUI = true;
+                    updateUI();
+                }
+            });
+
+            // 3. 左下双操作按钮
+            document.getElementById('btn-era-action').addEventListener('click', handleEraActionButton);
+            document.getElementById('btn-next-era').addEventListener('click', () => {
+                if (save.world.eraIndex === 6 && canPrestigeNow()) {
+                    triggerPrestige();
+                } else if (canMadResetNow()) {
+                    switchTab('prestige', 'pres_reset');
+                }
+            });
+
+            // 4. 右侧 5 个独立主 Tab 与子页签条切换
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+            });
+            const subTabBar = document.getElementById('subtab-bar');
+            if (subTabBar) {
+                subTabBar.addEventListener('click', e => {
+                    if (window.EvolveModules && window.EvolveModules.UI) {
+                        window.EvolveModules.UI.handleSubTabClick(getHostApi(), e.target);
+                    }
+                });
+            }
+
+            // 5. 右侧面板事件委托
+            document.getElementById('tab-content').addEventListener('click', e => {
+                if (window.EvolveModules && window.EvolveModules.UI && window.EvolveModules.UI.handleSubTabClick(getHostApi(), e.target)) {
+                    return;
+                }
+
+                if (e.target.closest('#btn-recruit-pop')) {
+                    recruitPopulation();
+                    return;
+                }
+
+                const cellBtn = e.target.closest('button[data-cell]');
+                if (cellBtn) {
+                    buyCellStructure(cellBtn.dataset.cell);
+                    return;
+                }
+
+                const kingBtn = e.target.closest('button[data-kingdom]');
+                if (kingBtn) {
+                    save.world.kingdom = kingBtn.dataset.kingdom;
+                    sound.playClick();
+                    recomputeCapacities();
+                    dirtyUI = true;
+                    updateUI();
+                    return;
+                }
+
+                const specBtn = e.target.closest('button[data-species]');
+                if (specBtn) {
+                    const specId = specBtn.dataset.species;
+                    save.world.species = specId;
+                    const dl = window.EvolveModules && window.EvolveModules.DataLoader;
+                    const sp = dl && dl.MAPS && dl.MAPS.species && dl.MAPS.species[specId];
+                    if (sp) {
+                        save.world.genus = sp.genus;
+                        save.world.kingdom = sp.genus === 'plant' ? 'plant' : (sp.genus === 'fungi' ? 'fungi' : 'animal');
+                        showToast(`🧬 已适应演化为：【${sp.name}】`);
+                    }
+                    sound.playClick();
+                    recomputeCapacities();
+                    dirtyUI = true;
+                    updateUI();
+                    return;
+                }
+
+                const govBtn = e.target.closest('button[data-gov]');
+                if (govBtn) {
+                    save.world.gov = govBtn.dataset.gov;
+                    sound.playClick();
+                    const dl = window.EvolveModules && window.EvolveModules.DataLoader;
+                    const govDef = (dl && dl.MAPS && dl.MAPS.governments && dl.MAPS.governments[save.world.gov])
+                        || EVOLVE_GOV_DEF.find(g => g.id === save.world.gov);
+                    showToast(`🏛️ 政体已切换为：【${govDef ? govDef.name : save.world.gov}】`);
+                    recomputeCapacities();
+                    dirtyUI = true;
+                    updateUI();
+                    return;
+                }
+
+                const taxBtn = e.target.closest('button[data-tax]');
+                if (taxBtn) {
+                    save.world.taxRate = Number(taxBtn.dataset.tax);
+                    sound.playClick();
+                    dirtyUI = true;
+                    updateUI();
+                    return;
+                }
+
+                const smelterBtn = e.target.closest('button[data-smelter]');
+                if (smelterBtn) {
+                    save.world.smelterMode = smelterBtn.dataset.smelter;
+                    sound.playClick();
+                    dirtyUI = true;
+                    updateUI();
+                    return;
+                }
+
+                const craftBtn = e.target.closest('button[data-craft]');
+                if (craftBtn) {
+                    save.world.craftFocus = craftBtn.dataset.craft;
+                    sound.playClick();
+                    dirtyUI = true;
+                    updateUI();
+                    return;
+                }
+
+                const resBtn = e.target.closest('button[data-research]');
+                if (resBtn) {
+                    buyTechnology(resBtn.dataset.research);
+                    return;
+                }
+
+                const bldBtn = e.target.closest('button[data-build]');
+                if (bldBtn) {
+                    buyBuilding(bldBtn.dataset.build, false);
+                    return;
+                }
+
+                const exBldBtn = e.target.closest('button[data-extra-build]');
+                if (exBldBtn) {
+                    buyBuilding(exBldBtn.dataset.extraBuild, true);
+                    return;
+                }
+
+                const batchBtn = e.target.closest('button[data-batch]');
+                if (batchBtn) {
+                    const val = batchBtn.dataset.batch;
+                    buildBatch = val === 'MAX' ? 'MAX' : Number(val);
+                    dirtyUI = true;
+                    updateUI();
+                    return;
+                }
+
+                const jobBtn = e.target.closest('button[data-job]');
+                if (jobBtn) {
+                    adjustJob(jobBtn.dataset.job, Number(jobBtn.dataset.delta));
+                    return;
+                }
+
+                const perkBtn = e.target.closest('button[data-perk]');
+                if (perkBtn) {
+                    buyPerk(perkBtn.dataset.perk);
+                    return;
+                }
+
+                if (e.target.closest('#btn-mad-arm')) {
+                    save.world.madArmed = !save.world.madArmed;
+                    sound.playClick();
+                    dirtyUI = true;
+                    updateUI();
+                    return;
+                }
+
+                if (e.target.closest('#btn-mad-go')) {
+                    triggerMadReset();
+                    return;
+                }
+
+                if (e.target.closest('#btn-prestige-go')) {
+                    triggerPrestige();
+                    return;
+                }
+
+                if (e.target.closest('#btn-toggle-done-tech')) {
+                    hideResearchedTechs = !hideResearchedTechs;
+                    dirtyUI = true;
+                    updateUI();
+                    return;
+                }
+
+                if (e.target.closest('#btn-set-sound')) {
+                    save.settings.sound = !save.settings.sound;
+                    dirtyUI = true;
+                    updateUI();
+                    return;
+                }
+
+                if (e.target.closest('#btn-set-crt')) {
+                    save.settings.crt = !save.settings.crt;
+                    applySettings();
+                    dirtyUI = true;
+                    updateUI();
+                    return;
+                }
+
+                if (e.target.closest('#btn-set-save')) {
+                    saveGame(true);
+                    return;
+                }
+
+                if (e.target.closest('#btn-set-export')) {
+                    exportSaveCode();
+                    return;
+                }
+
+                if (e.target.closest('#btn-set-import')) {
+                    importSaveCode();
+                    return;
+                }
+
+                if (e.target.closest('#btn-set-reset')) {
+                    hardResetGame();
+                    return;
+                }
+            });
+
+            // 6. 模态框关闭与切后台自动保存
+            document.getElementById('modal-close-x').addEventListener('click', closeModal);
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) saveGame(false);
+            });
+        }
+
+        window.addEventListener('load', () => {
+            initFloatPool();
+            buildLeftResourceCards();
+            recomputeCapacities();
+            loadGame();
+            ensureEvolveWorldFields();
+            applySettings();
+            bindEvents();
+            renderPixelScene();
+            dirtyUI = true;
+            updateUI();
+
+            // 250ms 固定逻辑 Tick（与数值配置手册一致）
+            setInterval(() => {
+                if (document.hidden) return;
+                recomputeCapacities();
+                stepSimulation(0.25);
+                checkMissions();
+                checkEraAdvancement();
+                updateUI();
+            }, 250);
+
+            // 每 30 秒自动存档
+            setInterval(() => {
+                if (!document.hidden) saveGame(false);
+            }, 30000);
+
+            // 严格节流 15 FPS 像素画布渲染循环（后台自动休眠）
+            let lastFrameTime = 0;
+            const frameInterval = 1000 / 15;
+            function animationLoop(now) {
+                if (!document.hidden && now - lastFrameTime >= frameInterval) {
+                    lastFrameTime = now;
+                    renderPixelScene();
+                }
+                requestAnimationFrame(animationLoop);
+            }
+            requestAnimationFrame(animationLoop);
+        });
+    </script>
+</body>
+</html>

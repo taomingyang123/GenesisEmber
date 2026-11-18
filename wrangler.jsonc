@@ -1,0 +1,15 @@
+{
+  "name": "genesis-ember",
+  "main": "workers/site.js",
+  "compatibility_date": "2026-06-05",
+  "build": {
+    "command": "node tools/build-evolve-data.js"
+  },
+  "assets": {
+    "directory": "evolve_web",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

@@ -1,0 +1,49 @@
+name: CI & Cloudflare Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-deploy:
+    name: Build Data, Test & Deploy H5 to Cloudflare
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build & Verify evolve_web Data Bundle
+        run: npm run build:web
+
+      - name: Run Unit & Integration Tests
+        run: npm test
+
+      - name: Verify Static H5 Assets
+        run: |
+          test -f evolve_web/rna.html || exit 1
+          test -f evolve_web/data/evolve-bundle.js || exit 1
+          echo "All evolve_web static assets verified."
+
+      - name: Deploy to Cloudflare Workers
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "CLOUDFLARE_API_TOKEN is not configured; skipping GitHub Actions deploy (Cloudflare Workers Builds Git integration can deploy directly if enabled)."
+            exit 0
+          fi
+          npx --yes wrangler deploy

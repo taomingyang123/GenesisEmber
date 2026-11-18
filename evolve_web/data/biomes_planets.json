@@ -1,0 +1,188 @@
+{
+  "biomes": [
+    {
+      "id": "grassland",
+      "name": "草原",
+      "icon": "🌾",
+      "desc": "草原星球与地球类似，四季分明、温度适中，农业与人类居住条件极佳。",
+      "effectsText": "食物产出 +20%，人口生长条件稳定",
+      "mods": { "food": 1.20, "lumber": 1.0, "stone": 1.0, "mine": 1.0, "knowledge": 1.0, "morale": 2 }
+    },
+    {
+      "id": "oceanic",
+      "name": "海洋",
+      "icon": "🌊",
+      "desc": "海洋星球表面几乎全被液态海洋覆盖，少量岛屿星罗棋布，渔业与水下资源丰富。",
+      "effectsText": "食物 +12%，水冰/科研 +6%，煤炭/矿采 -5%",
+      "mods": { "food": 1.12, "lumber": 0.95, "stone": 0.95, "mine": 0.95, "knowledge": 1.06, "morale": 0 }
+    },
+    {
+      "id": "forest",
+      "name": "森林",
+      "icon": "🌲",
+      "desc": "森林星球被茂密的远古林海覆盖，拥有几乎取之不尽的木材与植物群落。",
+      "effectsText": "木材产出 +20%，食物 +5%",
+      "mods": { "food": 1.05, "lumber": 1.20, "stone": 0.98, "mine": 1.0, "knowledge": 1.0, "morale": 2 }
+    },
+    {
+      "id": "desert",
+      "name": "沙漠",
+      "icon": "🏜️",
+      "desc": "沙漠星球终年炎热干燥，但风蚀岩层裸露出丰富的石材与矿产，太阳能充足。",
+      "effectsText": "石材 +20%，矿产 +10%，食物 -25%",
+      "mods": { "food": 0.75, "lumber": 0.90, "stone": 1.20, "mine": 1.10, "knowledge": 1.0, "morale": -2 }
+    },
+    {
+      "id": "volcanic",
+      "name": "火山",
+      "icon": "🌋",
+      "desc": "火山星球地壳剧烈活动，熔岩与矿脉翻涌地表，富含金属却不利农耕。",
+      "effectsText": "食物 -10%，石材 +12%，金属矿产 +8%",
+      "mods": { "food": 0.90, "lumber": 0.95, "stone": 1.12, "mine": 1.08, "knowledge": 1.0, "morale": -3 }
+    },
+    {
+      "id": "tundra",
+      "name": "冻原",
+      "icon": "❄️",
+      "desc": "冻原星球终年冰封寒冷，植被稀少但严酷环境磨砺出极强的生存与耐力。",
+      "effectsText": "煤炭/采掘 +25%，食物 -10%",
+      "mods": { "food": 0.90, "lumber": 0.95, "stone": 1.05, "mine": 1.15, "knowledge": 1.05, "morale": -2 }
+    },
+    {
+      "id": "savanna",
+      "name": "稀树",
+      "icon": "🦒",
+      "desc": "稀树草原温暖开阔，兽群奔腾但林木稀疏，适合游牧与畜牧业。",
+      "effectsText": "食物 +10%，贸易/金币 +15%，木材 -20%",
+      "mods": { "food": 1.10, "lumber": 0.80, "stone": 1.0, "mine": 1.0, "knowledge": 1.0, "morale": 1 }
+    },
+    {
+      "id": "swamp",
+      "name": "沼泽",
+      "icon": "🐊",
+      "desc": "沼泽星球湿热泥泞、植被浓密，天然防御极佳且蕴含独特矿物沉积。",
+      "effectsText": "防御与工业 +10%，食物 -12%",
+      "mods": { "food": 0.88, "lumber": 1.10, "stone": 1.0, "mine": 1.10, "knowledge": 1.02, "morale": -1 }
+    },
+    {
+      "id": "ashland",
+      "name": "灰幕",
+      "icon": "🌫️",
+      "desc": "灰幕星球被厚重火山灰云遮蔽，极难农耕却藏有极丰富重金属和工业燃料。",
+      "effectsText": "矿产 +25%，石材 +10%，食物 -35%",
+      "mods": { "food": 0.65, "lumber": 0.90, "stone": 1.10, "mine": 1.25, "knowledge": 1.0, "morale": -4 }
+    },
+    {
+      "id": "taiga",
+      "name": "针叶林",
+      "icon": "🎄",
+      "desc": "针叶林星球气候偏冷，但辽阔泰加林与矿床并存。",
+      "effectsText": "木材 +50%，矿产 +10%，食物 -8%",
+      "mods": { "food": 0.92, "lumber": 1.50, "stone": 1.0, "mine": 1.10, "knowledge": 1.0, "morale": 0 }
+    }
+  ],
+  "planetTraits": [
+    { "id": "none", "name": "标准行星", "desc": "轨道稳定、气候温和的正常行星。", "mods": {} },
+    { "id": "toxic", "name": "毒气", "desc": "大气中充满毒气，人口增长 -15%，但基因突变与测序速度 +25%。", "mods": { "popGrowth": 0.85, "geneSpeed": 1.25 } },
+    { "id": "mellow", "name": "温和", "desc": "天然镇静气体使市民士气 +8%，但总体劳作产率 -8%。", "mods": { "morale": 8, "globalProd": 0.92 } },
+    { "id": "rage", "name": "怒火", "desc": "空气中含易怒化合物，士兵战斗评级 +15%，但略微增加士兵伤亡。", "mods": { "combat": 1.15, "morale": -3 } },
+    { "id": "stormy", "name": "暴风雨", "desc": "强风与暴雨天气更加频繁。", "mods": { "windBias": 0.35 } },
+    { "id": "ozone", "name": "臭氧", "desc": "臭氧层薄弱，阳光辐射强，晴天略减士气但提升生物突变率 +15%。", "mods": { "morale": -3, "geneSpeed": 1.15 } },
+    { "id": "magnetic", "name": "磁性", "desc": "异常强大的星球磁场使工业电力有效输出 +10%，并提升科研 +6%。", "mods": { "power": 1.10, "knowledge": 1.06 } },
+    { "id": "trashed", "name": "垃圾", "desc": "古老星际垃圾场覆盖地表，木材/石材采集 -15%，但回收与工业合金 +15%。", "mods": { "lumber": 0.85, "stone": 0.85, "industry": 1.15 } },
+    { "id": "elliptical", "name": "椭圆", "desc": "椭圆轨道拉长行星公转周期至 450 天，夏季与冬季季节效应更显著。", "mods": { "orbit": 450 } },
+    { "id": "flare", "name": "耀斑", "desc": "恒星耀斑周期性掠过，发电偶获额外能量 +8%，知识研究 +5%。", "mods": { "power": 1.08, "knowledge": 1.05 } },
+    { "id": "dense", "name": "高密度", "desc": "重金属沉积丰富，采矿产出 +20%，建筑成本 +5%。", "mods": { "mine": 1.20, "buildCost": 1.05 } },
+    { "id": "unstable", "name": "地震", "desc": "地质活动频繁，偶发地震但地热与石材/矿产 +12%。", "mods": { "stone": 1.12, "mine": 1.12 } },
+    { "id": "permafrost", "name": "永冻", "desc": "厚重永冻层下蕴含壮丽极光，采掘 -15% 但知识产率 +18%。", "mods": { "mine": 0.85, "knowledge": 1.18 } }
+  ],
+  "universes": [
+    {
+      "id": "standard",
+      "name": "标准宇宙",
+      "icon": "🌌",
+      "desc": "具有正常物理定律的标准宇宙。",
+      "effect": "均衡的物理与演化法则，适合稳步推进全科技与全时代。"
+    },
+    {
+      "id": "heavy",
+      "name": "高引力宇宙",
+      "icon": "🪐",
+      "desc": "这个宇宙的引力比标准宇宙强得多。",
+      "effect": "太空时代建筑成本 +15%，但核爆以外的威望/方舟余烬收益 +25%，矿物产出 +10%。"
+    },
+    {
+      "id": "antimatter",
+      "name": "反物质宇宙",
+      "icon": "⚛️",
+      "desc": "这个宇宙主要由反物质组成。",
+      "effect": "全资源储量上限 +20%，能源建筑发电 +15%，全局产率基础倍率略低 (-10%) 但上限极高。"
+    },
+    {
+      "id": "evil",
+      "name": "邪恶宇宙",
+      "icon": "😈",
+      "desc": "这个宇宙乾坤颠倒，黑白不分。",
+      "effect": "战斗评级与战利品 +35%，专制/军营收益强化，高税率不易引发抗议。"
+    },
+    {
+      "id": "micro",
+      "name": "微型宇宙",
+      "icon": "🔬",
+      "desc": "这个宇宙中的一切都很小。",
+      "effect": "所有建筑与科技成本 -20%，威望余烬收益 -25%，节奏超快。"
+    },
+    {
+      "id": "magic",
+      "name": "魔法宇宙",
+      "icon": "🪄",
+      "desc": "这个宇宙中真的有魔法存在。",
+      "effect": "全局知识 +15%，寺庙/神秘学研究额外赋能全文明产能 +10%。"
+    }
+  ],
+  "seasons": [
+    { "id": 0, "name": "春天", "icon": "🌸", "foodMult": 1.15, "morale": 4 },
+    { "id": 1, "name": "夏天", "icon": "☀️", "foodMult": 1.10, "morale": 2 },
+    { "id": 2, "name": "秋天", "icon": "🍂", "foodMult": 1.05, "morale": 0 },
+    { "id": 3, "name": "冬天", "icon": "❄️", "foodMult": 0.80, "morale": -5 }
+  ],
+  "weathers": [
+    { "id": 0, "name": "晴朗", "icon": "☀️", "foodMult": 1.05, "morale": 3, "wind": false },
+    { "id": 1, "name": "晴朗&有风", "icon": "🌤️", "foodMult": 1.00, "morale": 2, "wind": true },
+    { "id": 2, "name": "多云", "icon": "☁️", "foodMult": 1.00, "morale": 0, "wind": false },
+    { "id": 3, "name": "多云&有风", "icon": "🌬️", "foodMult": 0.98, "morale": -1, "wind": true },
+    { "id": 4, "name": "下雨", "icon": "🌧️", "foodMult": 1.10, "morale": -3, "wind": false },
+    { "id": 5, "name": "暴风雨", "icon": "⛈️", "foodMult": 0.92, "morale": -6, "wind": true },
+    { "id": 6, "name": "下雪", "icon": "🌨️", "foodMult": 0.85, "morale": -4, "wind": false },
+    { "id": 7, "name": "暴风雪", "icon": "❄️", "foodMult": 0.72, "morale": -8, "wind": true }
+  ],
+  "temps": [
+    { "id": 0, "name": "寒冷", "icon": "🥶", "foodMult": 0.90, "morale": -2 },
+    { "id": 1, "name": "温度适中", "icon": "🌡️", "foodMult": 1.00, "morale": 0 },
+    { "id": 2, "name": "炎热", "icon": "🔥", "foodMult": 0.95, "morale": -2 }
+  ],
+  "moons": [
+    { "id": 0, "name": "新月", "icon": "🌑", "bonusText": "循环过渡", "mods": {} },
+    { "id": 1, "name": "娥眉月", "icon": "🌒", "bonusText": "市民士气 +4%", "mods": { "morale": 4 } },
+    { "id": 2, "name": "上弦月", "icon": "🌓", "bonusText": "食物产率 +6%", "mods": { "food": 1.06 } },
+    { "id": 3, "name": "盈凸月", "icon": "🌔", "bonusText": "金属矿产 +8%", "mods": { "mine": 1.08 } },
+    { "id": 4, "name": "满月", "icon": "🌕", "bonusText": "全局产率 +3%", "mods": { "global": 1.03 } },
+    { "id": 5, "name": "张弦月", "icon": "🌖", "bonusText": "知识产率 +8%", "mods": { "knowledge": 1.08 } },
+    { "id": 6, "name": "下弦月", "icon": "🌗", "bonusText": "工匠/工业 +6%", "mods": { "industry": 1.06 } },
+    { "id": 7, "name": "残月", "icon": "🌘", "bonusText": "税收金币 +10%", "mods": { "tax": 1.10 } }
+  ],
+  "zodiac": [
+    { "id": "aquarius", "name": "水瓶座", "symbol": "♒︎", "desc": "象征水流：旅游与贸易收益 +10%", "mods": { "trade": 1.10 } },
+    { "id": "pisces", "name": "双鱼座", "symbol": "♓︎", "desc": "象征鱼：随机事件发生频率提升", "mods": { "eventFreq": 1.25 } },
+    { "id": "aries", "name": "白羊座", "symbol": "♈︎", "desc": "象征冲撞：驻军战斗评级 +10%", "mods": { "combat": 1.10 } },
+    { "id": "taurus", "name": "金牛座", "symbol": "♉︎", "desc": "象征公牛：全局产能稳步 +4%", "mods": { "global": 1.04 } },
+    { "id": "gemini", "name": "双子座", "symbol": "♊︎", "desc": "象征孪生子：知识产量 +8%", "mods": { "knowledge": 1.08 } },
+    { "id": "cancer", "name": "巨蟹座", "symbol": "♋︎", "desc": "象征螃蟹：伤兵治愈速度 +35%", "mods": { "heal": 1.35 } },
+    { "id": "leo", "name": "狮子座", "symbol": "♌︎", "desc": "象征雄狮：发电总功率 +8%", "mods": { "power": 1.08 } },
+    { "id": "virgo", "name": "处女座", "symbol": "♍︎", "desc": "象征处女：农场食物产量 +12%", "mods": { "food": 1.12 } },
+    { "id": "libra", "name": "天秤座", "symbol": "♎︎", "desc": "象征天平：人口增长速率 +12%", "mods": { "popGrowth": 1.12 } },
+    { "id": "scorpio", "name": "天蝎座", "symbol": "♏︎", "desc": "象征蝎子：间谍培训价格 -25% 且行动更隐蔽", "mods": { "spyDiscount": 0.75 } },
+    { "id": "sagittarius", "name": "射手座", "symbol": "♐︎", "desc": "象征弓手：剧场/艺人士气加成 +15%", "mods": { "moraleBonus": 1.15 } },
+    { "id": "capricorn", "name": "摩羯座", "symbol": "♑︎", "desc": "象征山羊：贸易盈利与自动路线数量 +10%", "mods": { "trade": 1.10 } }
+  ]
+}
