@@ -312,19 +312,21 @@ module.exports = function createGame(hooks = {}) {
       const rates = {};
       RESOURCES_DEF.forEach(r => { rates[r.id] = 0; });
 
-      // 1. 生命起源自动产出
-      let lifeMult = shardMult;
-      if (t.evo_organelle) lifeMult *= 1.10;
-      if (t.evo_nucleus) lifeMult *= 1.15;
-      if (t.evo_multicellular) lifeMult *= 1.15;
-      if (t.evo_vertebrate) lifeMult *= 1.20;
-      if (t.evo_mammal) lifeMult *= 1.20;
-      if (t.evo_primate) lifeMult *= 1.25;
+      // 1. 生命起源自动产出（进入农业时代后停止计算）
+      if (w.eraIndex === 0) {
+          let lifeMult = shardMult;
+          if (t.evo_organelle) lifeMult *= 1.10;
+          if (t.evo_nucleus) lifeMult *= 1.15;
+          if (t.evo_multicellular) lifeMult *= 1.15;
+          if (t.evo_vertebrate) lifeMult *= 1.20;
+          if (t.evo_mammal) lifeMult *= 1.20;
+          if (t.evo_primate) lifeMult *= 1.25;
 
-      if (t.evo_organelle) rates.rna += 0.25 * lifeMult;
-      if (t.evo_nucleus) rates.rna += 0.35 * lifeMult;
-      if (t.evo_nucleus) rates.dna += 0.15 * lifeMult;
-      if (t.evo_vertebrate) rates.dna += 0.25 * lifeMult;
+          if (t.evo_organelle) rates.rna += 0.25 * lifeMult;
+          if (t.evo_nucleus) rates.rna += 0.35 * lifeMult;
+          if (t.evo_nucleus) rates.dna += 0.15 * lifeMult;
+          if (t.evo_vertebrate) rates.dna += 0.25 * lifeMult;
+      }
 
       // 2. 农业及之后时代：人口食物消耗、幸福度、职业、建筑、电力与工业配方
       if (w.eraIndex >= 1) {

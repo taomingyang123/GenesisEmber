@@ -55,11 +55,55 @@
   let logCatFilter = 'all';
   let showAllMissions = false;
 
-  function getActiveSubTab(mainTab) {
-    const list = SUB_TABS[mainTab] || [];
+  function getSubTabs(host, mainTab) {
+    const fallback = SUB_TABS[mainTab] || [];
+    if (!host || typeof host.getSave !== 'function') return fallback;
+    const bridge = getBridge();
+    const { dl, arpaMod } = bridge.modules;
+    const save = host.getSave();
+    const w = (save && save.world) || { eraIndex: 0, techs: {} };
+
+    if (mainTab === 'evo') {
+      if (w.eraIndex === 0) {
+        return [{ id: 'evo_species', label: '🧬进化物种' }];
+      }
+      return [
+        { id: 'evo_pop', label: '👥人口职业' },
+        { id: 'evo_gov', label: w.eraIndex >= 2 ? '🏛️政体外交' : '🏛️政府税率' },
+        { id: 'evo_governor', label: (arpaMod.isGovernorUnlocked(save) ? '👔' : '🔒') + '总督' }
+      ];
+    }
+
+    if (mainTab === 'bld') {
+      if (w.eraIndex === 0) return [];
+      return [
+        { id: 'bld_city', label: '🏗️城市建筑' },
+        { id: 'bld_power', label: w.techs.electricity ? '⚡电力队列' : '📋建造队列' },
+        { id: 'bld_market', label: (w.techs.currency ? '⚖️' : '🔒') + '市场贸易' },
+        { id: 'bld_storage', label: '📦仓储箱柜' }
+      ];
+    }
+
+    if (mainTab === 'tech') {
+      if (w.eraIndex === 0) return [];
+      const hasArpa = (dl.DATA.arpaProjects || []).some(p => !p.reqTech || !!w.techs[p.reqTech]);
+      return [
+        { id: 'tech_tree', label: '🔬科技树' },
+        { id: 'tech_arpa', label: (hasArpa ? '🗼' : '🔒') + 'ARPA工程' },
+        { id: 'tech_gene', label: (arpaMod.isGeneLabUnlocked(save) ? '🧬' : '🔒') + '基因室' }
+      ];
+    }
+
+    return fallback;
+  }
+
+  function getActiveSubTab(mainTab, host) {
+    const list = getSubTabs(host, mainTab);
     const cur = activeSubTabs[mainTab];
     if (list.some(s => s.id === cur)) return cur;
-    return list[0] ? list[0].id : '';
+    const first = list[0] ? list[0].id : '';
+    if (first) activeSubTabs[mainTab] = first;
+    return first;
   }
 
   function setSubTab(mainTab, subId) {
@@ -120,8 +164,14 @@
   function renderSubTabBar(host, mainTab) {
     const bar = document.getElementById('subtab-bar');
     if (!bar) return;
-    const list = SUB_TABS[mainTab] || [];
-    const cur = getActiveSubTab(mainTab);
+    const list = getSubTabs(host, mainTab);
+    if (list.length === 0) {
+      bar.innerHTML = '';
+      bar.style.display = 'none';
+      return;
+    }
+    bar.style.display = '';
+    const cur = getActiveSubTab(mainTab, host);
     bar.innerHTML = list.map(s => `
       <button type="button" class="subtab-btn ${s.id === cur ? 'active' : ''}" data-subtab="${s.id}">
         ${s.label}
@@ -147,7 +197,18 @@
     const ctx = bridge.createContext(host);
     const save = ctx.save;
     const w = save.world;
-    const subId = getActiveSubTab(mainTab);
+    const subId = getActiveSubTab(mainTab, host);
+
+    if (w.eraIndex === 0 && (mainTab === 'bld' || mainTab === 'tech')) {
+      container.innerHTML = `
+        <div class="pixel-card flex flex-col items-center gap-3 text-center" style="padding:22px 14px;">
+          <div class="font-bold text-amber text-xs">${mainTab === 'bld' ? '🏛️ 当前处于【生命起源】原生质阶段' : '🔬 当前处于【生命起源】原生质阶段'}</div>
+          <div class="text-11 text-muted">${mainTab === 'bld' ? '请在【生命进化】完成 8 阶段进化并研究【智人诞生】，进入农业文明后解锁全部城市建筑、电网与贸易仓储！' : '请在【生命进化】完成生命基因主链，进入农业文明后开启 36 项文明科技树、ARPA 超级工程与基因实验室！'}</div>
+          <button type="button" class="pixel-btn bg-emerald text-11 font-bold" style="padding:6px 14px;" data-goto-tab="evo:evo_species">🧬 前往【生命进化】</button>
+        </div>
+      `;
+      return;
+    }
 
     if (mainTab === 'evo') {
       if (subId === 'evo_species') renderEvoSpecies(host, ctx, container);
@@ -187,10 +248,10 @@
     }
   }
 
-  /* =====================================================================
-     Tab 1: 进化 / 内政 子面板
-     ===================================================================== */
-  function renderEvoSpecies(host, ctx, container) {
+  /**
+   * 构建当前星系环境与物种基因概览卡片（进化前可调整物种，进化完成后锁定只读）
+   */
+  function buildSpeciesEnvSummaryCard(ctx, locked) {
     const { dl } = ctx;
     const w = ctx.save.world;
     const env = ctx.envMods || {};
@@ -201,13 +262,12 @@
     const pt = env.planetTrait || dl.MAPS.planetTraits[w.planetTrait];
     const univ = dl.MAPS.universes[w.universe] || dl.DATA.universes[0];
 
-    // 1. 当前星系环境与物种基因卡片
     const envCard = document.createElement('div');
     envCard.className = 'pixel-card flex flex-col gap-2';
     envCard.style.padding = '8px';
     envCard.innerHTML = `
       <div class="flex items-center justify-between flex-wrap gap-1" style="border-bottom:1px solid var(--border-dim); padding-bottom:4px;">
-        <span class="font-bold text-purple text-xs">${curSpec.icon} ${curSpec.name} · [${curGenus.name}]</span>
+        <span class="font-bold text-purple text-xs">${curSpec.icon} ${curSpec.name} · [${curGenus.name}] ${locked ? '<span class="text-10 text-dim">🔒本轮已定型</span>' : ''}</span>
         <span class="text-10 text-emerald">${biome.icon} ${biome.name} | ${pt.name} | ${univ.name}</span>
       </div>
       <div class="text-10 text-muted">${curSpec.desc}（母星：${curSpec.home}）</div>
@@ -227,36 +287,50 @@
         }).join('')}
       </div>
     `;
-    container.appendChild(envCard);
+    return envCard;
+  }
 
-    // 2. 智慧物种图谱选择器（按种群筛选，支持本局/起源自由切换适应演化）
-    const spCard = document.createElement('div');
-    spCard.className = 'pixel-card flex flex-col gap-2';
-    spCard.style.padding = '8px';
-    const filteredSpecies = selectedGenusFilter === 'all'
-      ? dl.DATA.species
-      : dl.DATA.species.filter(s => s.genus === selectedGenusFilter);
+  /* =====================================================================
+     Tab 1: 进化 / 内政 子面板
+     ===================================================================== */
+  function renderEvoSpecies(host, ctx, container) {
+    const { dl } = ctx;
+    const w = ctx.save.world;
+    const speciesLocked = w.eraIndex >= 1 || !!w.techs.evo_sapiens;
 
-    spCard.innerHTML = `
-      <div class="flex items-center justify-between flex-wrap gap-1">
-        <span class="font-bold text-sky text-xs">🧬 物种演化图谱 (34 物种 / 16 种群)</span>
-        <span class="text-10 text-muted">点击切换当前适应物种</span>
-      </div>
-      <div class="flex items-center gap-1 flex-wrap">
-        <button type="button" class="pixel-btn ${selectedGenusFilter === 'all' ? 'bg-sky' : 'bg-slate'} text-10" style="padding:2px 6px;" data-genus-filter="all">全部</button>
-        ${dl.DATA.genera.map(g => `
-          <button type="button" class="pixel-btn ${selectedGenusFilter === g.id ? 'bg-sky' : 'bg-slate'} text-10" style="padding:2px 6px;" data-genus-filter="${g.id}">${g.icon}${g.name.slice(0,2)}</button>
-        `).join('')}
-      </div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:4px; max-height:150px; overflow-y:auto;">
-        ${filteredSpecies.map(s => `
-          <button type="button" class="pixel-btn ${w.species === s.id ? 'bg-emerald' : 'bg-slate'} text-10 font-bold" style="padding:4px 5px; justify-content:flex-start;" data-species="${s.id}" title="${s.desc}">
-            <span>${s.icon}</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.name}</span>
-          </button>
-        `).join('')}
-      </div>
-    `;
-    container.appendChild(spCard);
+    // 1. 当前星系环境与物种基因卡片
+    container.appendChild(buildSpeciesEnvSummaryCard(ctx, speciesLocked));
+
+    // 2. 智慧物种图谱选择器（仅生命起源进化定型前可切换当前轮回物种）
+    if (!speciesLocked) {
+      const spCard = document.createElement('div');
+      spCard.className = 'pixel-card flex flex-col gap-2';
+      spCard.style.padding = '8px';
+      const filteredSpecies = selectedGenusFilter === 'all'
+        ? dl.DATA.species
+        : dl.DATA.species.filter(s => s.genus === selectedGenusFilter);
+
+      spCard.innerHTML = `
+        <div class="flex items-center justify-between flex-wrap gap-1">
+          <span class="font-bold text-sky text-xs">🧬 物种演化图谱 (34 物种 / 16 种群)</span>
+          <span class="text-10 text-muted">定型前可选择本轮演化物种</span>
+        </div>
+        <div class="flex items-center gap-1 flex-wrap">
+          <button type="button" class="pixel-btn ${selectedGenusFilter === 'all' ? 'bg-sky' : 'bg-slate'} text-10" style="padding:2px 6px;" data-genus-filter="all">全部</button>
+          ${dl.DATA.genera.map(g => `
+            <button type="button" class="pixel-btn ${selectedGenusFilter === g.id ? 'bg-sky' : 'bg-slate'} text-10" style="padding:2px 6px;" data-genus-filter="${g.id}">${g.icon}${g.name.slice(0,2)}</button>
+          `).join('')}
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:4px; max-height:150px; overflow-y:auto;">
+          ${filteredSpecies.map(s => `
+            <button type="button" class="pixel-btn ${w.species === s.id ? 'bg-emerald' : 'bg-slate'} text-10 font-bold" style="padding:4px 5px; justify-content:flex-start;" data-species="${s.id}" title="${s.desc}">
+              <span>${s.icon}</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.name}</span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+      container.appendChild(spCard);
+    }
 
     // 3. 生命起源：5 大细胞亚结构
     if (w.eraIndex === 0) {
@@ -331,9 +405,10 @@
   function renderEvoPopJobs(host, ctx, container) {
     const w = ctx.save.world;
     if (w.eraIndex < 1) {
-      container.innerHTML = `<div class="pixel-card text-center text-muted text-xs" style="padding:20px;">请先在【进化与物种】研究【智人诞生】，开启定居点后再分配人口与职业！</div>`;
+      container.innerHTML = `<div class="pixel-card text-center text-muted text-xs" style="padding:20px;">请先在【进化物种】研究【智人诞生】，开启定居点后再分配人口与职业！</div>`;
       return;
     }
+    container.appendChild(buildSpeciesEnvSummaryCard(ctx, true));
     const { dl } = ctx;
     const m = ctx.metrics;
     const allJobs = [...host.JOBS_DEF, ...(dl.DATA.extraJobs || [])];
@@ -531,7 +606,14 @@
     const { dl, arpaMod } = ctx;
     const w = ctx.save.world;
     if (!arpaMod.isGovernorUnlocked(ctx.save)) {
-      container.innerHTML = `<div class="pixel-card text-center text-muted text-xs" style="padding:20px;">研究【货币】或解锁 CRISPR【总督】后即可招募并任命总督自动管理城邦内政！</div>`;
+      container.innerHTML = `
+        <div class="pixel-card flex flex-col items-center gap-2 text-center" style="padding:20px;">
+          <div class="text-muted text-xs">研究【货币】或解锁 CRISPR【总督】后即可招募并任命总督自动管理城邦内政！</div>
+          <div class="flex items-center gap-2 flex-wrap justify-center">
+            <button type="button" class="pixel-btn bg-sky text-11 font-bold" style="padding:5px 12px;" data-goto-tab="tech:tech_tree">🔬 前往【科技树】</button>
+            <button type="button" class="pixel-btn bg-purple text-11 font-bold" style="padding:5px 12px;" data-goto-tab="prestige:pres_crispr">🧬 前往【CRISPR池】</button>
+          </div>
+        </div>`;
       return;
     }
 
@@ -842,7 +924,11 @@
     const { ecoMod } = ctx;
     const w = ctx.save.world;
     if (!w.techs.currency) {
-      container.innerHTML = `<div class="pixel-card text-center text-muted text-xs" style="padding:20px;">需研究【货币】后解锁动态市场交易；研究【贸易】后解锁自动贸易路线！</div>`;
+      container.innerHTML = `
+        <div class="pixel-card flex flex-col items-center gap-2 text-center" style="padding:20px;">
+          <div class="text-muted text-xs">需研究【货币】后解锁动态市场交易；研究【贸易】后解锁自动贸易路线！</div>
+          <button type="button" class="pixel-btn bg-sky text-11 font-bold" style="padding:5px 12px;" data-goto-tab="tech:tech_tree">🔬 前往【科技树】</button>
+        </div>`;
       return;
     }
 
@@ -974,23 +1060,31 @@
     const w = ctx.save.world;
     const hideDone = host.getHideResearchedTechs();
     const maxEraView = dl.hasCrispr(ctx.save, 'precognition') ? w.eraIndex + 2 : w.eraIndex + 1;
-    const doneCnt = Object.keys(w.techs).filter(k => w.techs[k]).length;
+    const civTechs = host.TECHS_DEF.filter(t => t.era >= 1);
+    const doneCnt = civTechs.filter(t => !!w.techs[t.id]).length;
 
     const filterBar = document.createElement('div');
     filterBar.className = 'pixel-card flex items-center justify-between gap-2';
     filterBar.style.padding = '6px 8px';
     filterBar.innerHTML = `
-      <span class="text-xs font-bold text-sky">🔬 文明科技树 (${doneCnt}/44)</span>
+      <span class="text-xs font-bold text-sky">🔬 文明科技树 (${doneCnt}/${civTechs.length})</span>
       <button type="button" id="btn-toggle-done-tech" class="pixel-btn ${hideDone ? 'bg-sky' : 'bg-slate'} text-10 font-bold" style="min-height:28px; padding:2px 8px;">
         ${hideDone ? '显示已研究' : '隐藏已研究'}
       </button>
     `;
     container.appendChild(filterBar);
 
-    host.TECHS_DEF.forEach(tDef => {
+    const visibleTechs = civTechs.filter(tDef => {
       const done = !!w.techs[tDef.id];
-      if (done && hideDone) return;
-      if (tDef.era > maxEraView && !done) return;
+      if (done && hideDone) return false;
+      if (tDef.era > maxEraView && !done) return false;
+      return true;
+    });
+    // 未研究科技置顶展示，已研究科技沉淀到底部
+    visibleTechs.sort((a, b) => (w.techs[a.id] ? 1 : 0) - (w.techs[b.id] ? 1 : 0));
+
+    visibleTechs.forEach(tDef => {
+      const done = !!w.techs[tDef.id];
 
       const reqOk = tDef.req.every(r => !!w.techs[r]);
       const effCost = host.getEffectiveTechCost(tDef);
@@ -1029,7 +1123,11 @@
     const unlocked = list.filter(p => !p.reqTech || !!w.techs[p.reqTech]);
 
     if (unlocked.length === 0) {
-      container.innerHTML = `<div class="pixel-card text-center text-muted text-xs" style="padding:20px;">研究【建筑学】或进入城市/工业时代后，将逐步解锁纪念碑、证券交易所、铁路、超级对撞机与发射设施等 ARPA 超级工程！</div>`;
+      container.innerHTML = `
+        <div class="pixel-card flex flex-col items-center gap-2 text-center" style="padding:20px;">
+          <div class="text-muted text-xs">研究【建筑学】或进入城市/工业时代后，将逐步解锁纪念碑、证券交易所、铁路、超级对撞机与发射设施等 ARPA 超级工程！</div>
+          <button type="button" class="pixel-btn bg-sky text-11 font-bold" style="padding:5px 12px;" data-goto-tab="tech:tech_tree">🔬 前往【科技树】</button>
+        </div>`;
       return;
     }
 
@@ -1074,7 +1172,11 @@
     const { dl, arpaMod } = ctx;
     const w = ctx.save.world;
     if (!arpaMod.isGeneLabUnlocked(ctx.save)) {
-      container.innerHTML = `<div class="pixel-card text-center text-muted text-xs" style="padding:20px;">研究【电子学】、进入【原子时代】或建造【生命科学实验室】后解锁基因组测序与基因编辑实验室！</div>`;
+      container.innerHTML = `
+        <div class="pixel-card flex flex-col items-center gap-2 text-center" style="padding:20px;">
+          <div class="text-muted text-xs">研究【电子学】、进入【原子时代】或建造【生命科学实验室】后解锁基因组测序与基因编辑实验室！</div>
+          <button type="button" class="pixel-btn bg-sky text-11 font-bold" style="padding:5px 12px;" data-goto-tab="tech:tech_tree">🔬 前往【科技树】</button>
+        </div>`;
       return;
     }
 
@@ -1196,8 +1298,9 @@
     `;
     container.appendChild(pCard);
 
-    // 3. 下一周目星球与宇宙预设选择器
+    // 3. 下一周目星球、宇宙与目标物种预设选择器
     const pre = save.prestige.nextPreset || { biome: 'grassland', planetTrait: 'none', universe: 'standard', species: 'human' };
+    const preSpec = dl.MAPS.species[pre.species] || dl.DATA.species[0];
     const preCard = document.createElement('div');
     preCard.className = 'pixel-card flex flex-col gap-2';
     preCard.style.padding = '8px';
@@ -1220,6 +1323,14 @@
         <div class="flex items-center gap-1 flex-wrap">
           ${dl.DATA.planetTraits.map(pt => `
             <button type="button" class="pixel-btn ${pre.planetTrait === pt.id ? 'bg-amber' : 'bg-slate'} text-10" style="padding:2px 6px;" data-preset-pt="${pt.id}" title="${pt.desc}">${pt.name}</button>
+          `).join('')}
+        </div>
+        <div class="text-10 text-muted" style="margin-top:4px;">目标演化物种: <strong class="text-sky">${preSpec.icon} ${preSpec.name}</strong> <span class="text-dim">(${preSpec.desc})</span></div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:4px; max-height:130px; overflow-y:auto;">
+          ${dl.DATA.species.map(s => `
+            <button type="button" class="pixel-btn ${pre.species === s.id ? 'bg-sky' : 'bg-slate'} text-10 font-bold" style="padding:3px 5px; justify-content:flex-start;" data-preset-species="${s.id}" title="${s.desc}">
+              <span>${s.icon}</span><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.name}</span>
+            </button>
           `).join('')}
         </div>
       </div>
@@ -1424,6 +1535,8 @@
     const zodiac = env.zodiac || ctx.dl.getZodiacSign();
     const moon = env.moon || { icon: '🌑', name: '新月', bonusText: '' };
 
+    container.appendChild(buildSpeciesEnvSummaryCard(ctx, w.eraIndex >= 1 || !!w.techs.evo_sapiens));
+
     const envCard = document.createElement('div');
     envCard.className = 'pixel-card flex flex-col gap-1';
     envCard.style.padding = '8px';
@@ -1437,11 +1550,12 @@
     `;
     container.appendChild(envCard);
 
+    const wikiResources = host.RESOURCES_DEF.filter(r => w.eraIndex === 0 || (r.id !== 'rna' && r.id !== 'dna'));
     const resAllCard = document.createElement('div');
     resAllCard.className = 'pixel-card flex flex-col gap-1';
     resAllCard.style.padding = '8px';
-    resAllCard.innerHTML = `<div class="font-bold text-emerald text-xs" style="margin-bottom:4px;">📦 26 种全文明资源百科与上限明细</div>`;
-    host.RESOURCES_DEF.forEach(r => {
+    resAllCard.innerHTML = `<div class="font-bold text-emerald text-xs" style="margin-bottom:4px;">📦 ${wikiResources.length} 种${w.eraIndex >= 1 ? '文明' : '全文明'}资源百科与上限明细</div>`;
+    wikiResources.forEach(r => {
       const unlocked = !!w.unlockedRes[r.id];
       const val = w.res[r.id] || 0;
       const cap = ctx.metrics.caps[r.id] || r.baseCap;
@@ -1790,6 +1904,22 @@
       host.markDirtyAndRender();
       return true;
     }
+    const preSpec = target.closest('button[data-preset-species]');
+    if (preSpec) {
+      save.prestige.nextPreset.species = preSpec.dataset.presetSpecies;
+      const sp = dl.MAPS.species[preSpec.dataset.presetSpecies];
+      if (sp) host.showToast(`🌌 已预设下轮物种：【${sp.name}】`);
+      host.playClick();
+      host.markDirtyAndRender();
+      return true;
+    }
+    const gotoBtn = target.closest('button[data-goto-tab]');
+    if (gotoBtn && host.switchTab) {
+      const [mTab, sTab] = gotoBtn.dataset.gotoTab.split(':');
+      host.playClick();
+      host.switchTab(mTab, sTab);
+      return true;
+    }
 
     // 8. 系统设置、日志、主线展开
     if (target.closest('#btn-toggle-all-missions')) {
@@ -1913,6 +2043,7 @@
 
   const api = {
     SUB_TABS,
+    getSubTabs,
     getActiveSubTab,
     setSubTab,
     updateTopWeatherBar,

@@ -401,6 +401,7 @@ test('evolve_web/rna.html 在 Node VM 中可完整解析、加载、跨时代推
       width: 300,
       height: 180,
       children: [],
+      _listeners: {},
       classList: {
         _set: new Set(),
         toggle(cls, force) {
@@ -418,7 +419,7 @@ test('evolve_web/rna.html 在 Node VM 中可完整解析、加载、跨时代推
       setAttribute(k, v) { this[k] = String(v); },
       getAttribute(k) { return this[k] ?? null; },
       removeAttribute(k) { delete this[k]; },
-      addEventListener() {},
+      addEventListener(ev, fn) { (this._listeners[ev] = this._listeners[ev] || []).push(fn); },
       querySelector() { return makeEl(''); },
       querySelectorAll() { return []; },
       closest() { return null; },
@@ -524,6 +525,21 @@ test('evolve_web/rna.html 在 Node VM 中可完整解析、加载、跨时代推
   assert.equal(typeof sandbox.__onLoad, 'function');
   sandbox.__onLoad();
 
+  // 测试生命起源阶段：子页签仅含 evo_species，且允许切换当前轮回物种
+  const originState = vm.runInContext(`
+    const h0 = getHostApi();
+    const evoTabs0 = EvolveModules.UI.getSubTabs(h0, 'evo').map(s => s.id);
+    const bldTabs0 = EvolveModules.UI.getSubTabs(h0, 'bld').map(s => s.id);
+    const techTabs0 = EvolveModules.UI.getSubTabs(h0, 'tech').map(s => s.id);
+    const fakeBtnElf = { dataset: { species: 'elf' }, closest(sel) { return sel === 'button[data-species]' ? this : null; } };
+    document.getElementById('tab-content')._listeners.click.forEach(fn => fn({ target: fakeBtnElf }));
+    ({ evoTabs0, bldTabs0, techTabs0, speciesBefore: save.world.species });
+  `, context);
+  assert.deepEqual(Array.from(originState.evoTabs0), ['evo_species']);
+  assert.deepEqual(Array.from(originState.bldTabs0), []);
+  assert.deepEqual(Array.from(originState.techTabs0), []);
+  assert.equal(originState.speciesBefore, 'elf');
+
   // 手动采集 RNA 若干次 + 步进模拟 + 购买细胞器 + 研发智人进化进入农业时代
   vm.runInContext(`
     handleStageManualClick();
@@ -538,12 +554,68 @@ test('evolve_web/rna.html 在 Node VM 中可完整解析、加载、跨时代推
     recomputeCapacities();
     checkEraAdvancement();
     stepSimulation(1.0);
+    updateUI();
     saveGame(false);
   `, context);
 
   const eraIdx = vm.runInContext('save.world.eraIndex', context);
   assert.ok(eraIdx >= 1, '完成 8 步进化后应进入农业文明');
   assert.ok(localStore.has('pixel_human_era_save_v3'), 'saveGame 应持久化至原存档键');
+
+  // 验证进化完成后：锁定当前轮回物种、移除 evo_species 板块、隐藏并停算 RNA/DNA、科技树排除起源节点、方舟队列防重
+  const postEvoCheck = vm.runInContext(`
+    const h1 = getHostApi();
+    const fakeBtnOrc = { dataset: { species: 'orc' }, closest(sel) { return sel === 'button[data-species]' ? this : null; } };
+    document.getElementById('tab-content')._listeners.click.forEach(fn => fn({ target: fakeBtnOrc }));
+    const evoTabs1 = EvolveModules.UI.getSubTabs(h1, 'evo').map(s => s.id);
+    const activeEvoSub = EvolveModules.UI.getActiveSubTab('evo', h1);
+    const rnaHidden = document.getElementById('lres-card-rna').classList.contains('hidden');
+    const dnaHidden = document.getElementById('lres-card-dna').classList.contains('hidden');
+    const techBox = document.createElement('div');
+    EvolveModules.UI.setSubTab('tech', 'tech_tree');
+    EvolveModules.UI.renderSubTabContent(h1, techBox, 'tech');
+    const techHtml = techBox.children.map(c => c.innerHTML).join('');
+    const wikiBox = document.createElement('div');
+    EvolveModules.UI.setSubTab('sys', 'sys_wiki');
+    EvolveModules.UI.renderSubTabContent(h1, wikiBox, 'sys');
+    const wikiHtml = wikiBox.children.map(c => c.innerHTML).join('');
+    const presBox = document.createElement('div');
+    EvolveModules.UI.setSubTab('prestige', 'pres_reset');
+    EvolveModules.UI.renderSubTabContent(h1, presBox, 'prestige');
+    const presHtml = presBox.children.map(c => c.innerHTML).join('');
+    const ctx1 = EvolveModules.Bridge.createContext(h1);
+    const q1 = EvolveModules.EconomyStorage.enqueueBuild(ctx1, 'colonyShip', false);
+    const q2 = EvolveModules.EconomyStorage.enqueueBuild(ctx1, 'colonyShip', false);
+    ({
+      speciesAfter: save.world.species,
+      evoTabs1,
+      activeEvoSub,
+      rnaHidden,
+      dnaHidden,
+      rnaRate: metrics.netRates.rna,
+      dnaRate: metrics.netRates.dna,
+      resCountText: document.getElementById('left-res-count').textContent,
+      hasEvoMembraneInTech: techHtml.includes('细胞膜'),
+      hasRnaInWiki: wikiHtml.includes('>RNA<'),
+      hasPresetSpecies: presHtml.includes('data-preset-species='),
+      shipQ1: q1.ok,
+      shipQ2: q2.ok
+    });
+  `, context);
+
+  assert.equal(postEvoCheck.speciesAfter, 'elf', '进化完成后当前轮回不可再切换物种');
+  assert.deepEqual(Array.from(postEvoCheck.evoTabs1), ['evo_pop', 'evo_gov', 'evo_governor']);
+  assert.equal(postEvoCheck.activeEvoSub, 'evo_pop', '进化完成后子页签应自动切换至人口职业');
+  assert.equal(postEvoCheck.rnaHidden, true, '进化完成后左侧应隐藏 RNA 卡片');
+  assert.equal(postEvoCheck.dnaHidden, true, '进化完成后左侧应隐藏 DNA 卡片');
+  assert.equal(postEvoCheck.rnaRate, 0, '进化完成后 RNA 产率应停止计算');
+  assert.equal(postEvoCheck.dnaRate, 0, '进化完成后 DNA 产率应停止计算');
+  assert.match(postEvoCheck.resCountText, /\/24$/, '进化完成后资源计数应排除 RNA/DNA 变为 24');
+  assert.equal(postEvoCheck.hasEvoMembraneInTech, false, '文明科技树不应重复出现起源进化节点');
+  assert.equal(postEvoCheck.hasRnaInWiki, false, '进化完成后资源百科应隐藏 RNA/DNA');
+  assert.equal(postEvoCheck.hasPresetSpecies, true, '转生预设面板应支持预设下一轮回物种');
+  assert.equal(postEvoCheck.shipQ1, true);
+  assert.equal(postEvoCheck.shipQ2, false, '唯一建筑恒星际殖民方舟不应允许重复加入队列');
 
   // 测试核弹 MAD 与星际方舟重置 + preset 应用 + Base64 导入导出兼容性
   const madRes = vm.runInContext(`

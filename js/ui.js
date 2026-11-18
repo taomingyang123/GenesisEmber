@@ -114,7 +114,8 @@ class GameUI {
     this.hit(x+10,my,inner,25,()=>this.jumpTo('prestige','mission'));
 
     const ly=y+headH+gap,lw=wide?390:W,inset=wide?10:8,lx=x+inset,lcy=ly+inset,cw=lw-2*inset,stage=wide?212:112;
-    const resources=d.RESOURCES_DEF.filter(r=>w.unlockedRes[r.id]);
+    const resources=d.RESOURCES_DEF.filter(r=>w.unlockedRes[r.id]&&(w.eraIndex===0||(r.id!=='rna'&&r.id!=='dna')));
+    const totalResCount=w.eraIndex>=1?d.RESOURCES_DEF.length-2:d.RESOURCES_DEF.length;
     const resY=lcy+stage+gap;
     const resH=wide?bottom-inset-45-gap-resY:Math.min(92,37+Math.ceil(resources.length/2)*41-4);
     const ay=resY+resH+gap, leftBottom=ay+45+inset;
@@ -141,7 +142,7 @@ class GameUI {
     this.box(lx,resY,cw,resH,'#0c121e','#24324a');
     const ri=wide?8:6,rx=lx+ri,rw=cw-2*ri;
     this.text('📊 全文明资源库存与净产率',rx,resY+ri+8,11,C.sky,true,rw-75);
-    this.text('已解锁 '+resources.length+'/26',rx+rw,resY+ri+8,10,C.muted,true,83,'right');
+    this.text('已解锁 '+resources.length+'/'+totalResCount,rx+rw,resY+ri+8,10,C.muted,true,83,'right');
     this.box(rx,resY+ri+19,rw,1,'#1e293b',null,0);
     const grid={x:rx,y:resY+ri+25,w:rw,h:Math.max(1,resH-2*ri-25)};
     this.grid=grid;this.maxResScroll=Math.max(0,Math.ceil(resources.length/2)*41-4-grid.h);
@@ -170,13 +171,15 @@ class GameUI {
     this.box(px+2,py+bar,pw-4,2,C.line,null,0,0);
     const tw=(pw-24)/5;
     const ready=t=>!w.techs[t.id]&&t.era<=w.eraIndex&&t.req.every(id=>w.techs[id])&&g.canAffordCost(t.cost);
-    const badges=[d.EVO_CHAIN_IDS.some(id=>ready(d.TECH_MAP[id]))||Object.values(w.jobs).reduce((a,b)=>a+b,0)<Math.floor(w.pop),d.BUILDINGS_DEF.some(b=>b.era<=w.eraIndex&&(!b.reqTech||w.techs[b.reqTech])&&(!b.maxCount||w.buildings[b.id]<b.maxCount)&&g.canAffordCost(g.getBuildingCost(b,1))),d.TECHS_DEF.some(ready),can,false];
+    const badges=[d.EVO_CHAIN_IDS.some(id=>ready(d.TECH_MAP[id]))||Object.values(w.jobs).reduce((a,b)=>a+b,0)<Math.floor(w.pop),d.BUILDINGS_DEF.some(b=>b.era<=w.eraIndex&&(!b.reqTech||w.techs[b.reqTech])&&(!b.maxCount||w.buildings[b.id]<b.maxCount)&&g.canAffordCost(g.getBuildingCost(b,1))),d.TECHS_DEF.some(t=>t.era>=1&&ready(t)),can,false];
     tabs.forEach(([id,icon,label],i)=>{
       const xx=px+6+i*(tw+3),yy=py+6,active=this.tab===id,bh=bar-10;
+      const tabIcon=id==='evo'?(w.eraIndex===0?'🧬':'👥'):icon;
+      const tabLabel=id==='evo'?(w.eraIndex===0?'生命进化':'人口/职业'):label;
       this.box(xx,yy,tw,bh,active?'#1e2d4a':'#162033',active?C.sky:'#293852');
       if(active)this.box(xx+1,yy+bh-3,tw-2,2,C.sky,null,0);
-      if(wide)this.text(icon+' '+label,xx+tw/2,yy+bh/2,12,active?'#fff':C.muted,true,tw-4,'center');
-      else {this.text(icon,xx+tw/2,yy+13,12,C.ink,false,tw,'center');this.text(label,xx+tw/2,yy+32,11,active?'#fff':C.muted,true,tw-2,'center');}
+      if(wide)this.text(tabIcon+' '+tabLabel,xx+tw/2,yy+bh/2,12,active?'#fff':C.muted,true,tw-4,'center');
+      else {this.text(tabIcon,xx+tw/2,yy+13,12,C.ink,false,tw,'center');this.text(tabLabel,xx+tw/2,yy+32,11,active?'#fff':C.muted,true,tw-2,'center');}
       if(badges[i])this.box(xx+tw-11,yy+4,7,7,'#10b981',null,0,4);
       this.hit(xx,yy,tw,bh,()=>this.changeTab(id));
     });
@@ -264,22 +267,23 @@ class GameUI {
           this.text(j.desc,x+18,yy+31,10,C.muted,false,width-150);
           [-1,1,5].forEach((n,k)=>this.button(x+width-118+k*34,yy+7,30,30,['-','+','+5'][k],['slate','sky','indigo'][k],()=>g.adjustJob(j.id,n)));
         });advance(h);
+      } else {
+        const items=d.EVO_CHAIN_IDS.map((id,i)=>research(id,i,true));
+        // Draw the surrounding group before the rows so the single frame includes wrapped descriptions.
+        const innerW=width-20;
+        let total=41;
+        for(const item of items){
+          const textW=innerW-18-(item.btn?Math.ceil(this.measure(item.btn,11,true))+32:0);
+          total+=14+17+14*this.lines(item.desc,textW,10).length+14+8;
+        }
+        block(total+2);
+        this.text('🧬 生命基因进化树 (8 阶段)',x+10,this.cy+19,12,C.green,true,width-110);
+        this.text(w.techs.evo_sapiens?'✅ 已完成智人演化':'向智慧生命演进',x+width-10,this.cy+19,10,C.muted,false,100,'right');
+        this.box(x+10,this.cy+32,width-20,1,'#26354d',null,0);
+        this.cy+=41;
+        items.forEach(item=>{this.cy+=this.row(x+10,this.cy,innerW,item)+8;});
+        this.cy+=10;
       }
-      const items=d.EVO_CHAIN_IDS.map((id,i)=>research(id,i,true));
-      // Draw the surrounding group before the rows so the single frame includes wrapped descriptions.
-      const innerW=width-20;
-      let total=41;
-      for(const item of items){
-        const textW=innerW-18-(item.btn?Math.ceil(this.measure(item.btn,11,true))+32:0);
-        total+=14+17+14*this.lines(item.desc,textW,10).length+14+8;
-      }
-      block(total+2);
-      this.text('🧬 生命基因进化树 (8 阶段)',x+10,this.cy+19,12,C.green,true,width-110);
-      this.text(w.techs.evo_sapiens?'✅ 已完成智人演化':'向智慧生命演进',x+width-10,this.cy+19,10,C.muted,false,100,'right');
-      this.box(x+10,this.cy+32,width-20,1,'#26354d',null,0);
-      this.cy+=41;
-      items.forEach(item=>{this.cy+=this.row(x+10,this.cy,innerW,item)+8;});
-      this.cy+=10;
     }else if(this.tab==='bld'){
       block(48);this.text('🏛️ 批量建造:',x+10,this.cy+24,12,C.amber,true);
       if(w.techs.electricity)this.text('⚡发电 '+Math.round(m.powerGen)+'MW / 负荷 '+Math.round(m.powerReq)+'MW',x+106,this.cy+24,10,C.sky,false,Math.max(0,width-255));
@@ -297,9 +301,15 @@ class GameUI {
         row({title:b.name,tag:'已建 '+owned+'  ['+d.ERAS_DEF[b.era].name+']',color:C.amber,desc:b.desc,cost:maxed?null:cost,detail:maxed?'✅ 已达建造上限':'费用(+'+qty+'): ',btn:maxed?'已满':'建造 +'+qty,tone:'amber',action:!maxed&&g.canAffordCost(cost)?()=>g.build(b.id):null});
       });
     }else if(this.tab==='tech'){
-      block(44);this.text('🔬 文明科技树 ('+Object.keys(w.techs).filter(id=>w.techs[id]).length+'/44)',x+10,this.cy+22,12,C.sky,true);
+      const civTechs=d.TECHS_DEF.filter(t=>t.era>=1);
+      block(44);this.text('🔬 文明科技树 ('+civTechs.filter(t=>w.techs[t.id]).length+'/'+civTechs.length+')',x+10,this.cy+22,12,C.sky,true);
       this.button(x+width-83,this.cy+8,73,28,this.hideDone?'显示已研究':'隐藏已研究',this.hideDone?'sky':'slate',()=>{this.hideDone=!this.hideDone;},null,10);advance(44);
-      d.TECHS_DEF.filter(t=>t.era<=w.eraIndex+1&&!(this.hideDone&&w.techs[t.id])).forEach(t=>row(research(t.id,0,false)));
+      if(!w.eraIndex){
+        const msg='当前处于生命起源时代，完成【智人诞生】进入农业文明后解锁全部 36 项文明科技！',lines=this.lines(msg,width-44,12),h=44+17*lines.length;
+        block(h);lines.forEach((str,i)=>this.text(str,x+22,this.cy+30+i*17,12,C.muted));advance(h);
+      } else {
+        civTechs.filter(t=>t.era<=w.eraIndex+1&&!(this.hideDone&&w.techs[t.id])).sort((a,b)=>(w.techs[a.id]?1:0)-(w.techs[b.id]?1:0)).forEach(t=>row(research(t.id,0,false)));
+      }
     }else if(this.tab==='prestige'){
       const p=g.save.prestige,can=g.canPrestigeNow(),gain=g.calcPrestigeGain();
       const narrow=width<490,h=narrow?131:82;block(h,'#6b21a8');
@@ -334,14 +344,15 @@ class GameUI {
       const bw=(width-32)/3;
       buttons.forEach(([label,color,action],i)=>this.button(x+10+(i%3)*(bw+6),this.cy+35+44*Math.floor(i/3),bw,38,label,color,action));advance(127);
       this.anchors.resources=this.cy-this.start;
-      block(42+d.RESOURCES_DEF.length*30);this.text('📦 26 种全文明资源百科与上限明细',x+10,this.cy+18,12,C.green,true);
-      d.RESOURCES_DEF.forEach((r,i)=>{
+      const wikiRes=d.RESOURCES_DEF.filter(r=>w.eraIndex===0||(r.id!=='rna'&&r.id!=='dna'));
+      block(42+wikiRes.length*30);this.text('📦 '+wikiRes.length+' 种'+(w.eraIndex>=1?'文明':'全文明')+'资源百科与上限明细',x+10,this.cy+18,12,C.green,true);
+      wikiRes.forEach((r,i)=>{
         const yy=this.cy+35+i*30,unlocked=w.unlockedRes[r.id],net=m.netRates[r.id]||0;
         this.box(x+10,yy,width-20,26,'#0d1422','#1e293b',1,3);
         this.text(r.name,x+18,yy+13,11,unlocked?C.ink:C.dim,true);
         this.text('['+d.ERAS_DEF[r.era].name+']',x+22+this.measure(r.name,11,true),yy+13,10,C.dim);
         this.text(unlocked?fmt(w.res[r.id])+' / '+fmt(m.caps[r.id])+' ('+rateText(net)+')':'未解锁',x+width-18,yy+13,11,unlocked?C.ink:C.dim,false,width/2,'right');
-      });advance(42+d.RESOURCES_DEF.length*30);
+      });advance(42+wikiRes.length*30);
     }
   }
   openDialog(dialog){this.dialog=dialog;this.touch=null;this.render();}

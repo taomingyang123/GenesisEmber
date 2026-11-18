@@ -884,7 +884,7 @@
             <section id="right-pane" class="pixel-box">
                 <nav class="tab-bar">
                     <button type="button" class="tab-btn active" data-tab="evo">
-                        <span>🧬</span><span>进化/内政</span>
+                        <span id="tab-evo-icon">🧬</span><span id="tab-evo-label">生命进化</span>
                         <span id="badge-evo" class="tab-badge"></span>
                     </button>
                     <button type="button" class="tab-btn" data-tab="bld">
@@ -1487,6 +1487,7 @@
                 playBuild: () => sound.playBuild(),
                 playTech: () => sound.playTech(),
                 markDirtyAndRender: () => { dirtyUI = true; updateUI(); },
+                switchTab,
                 saveGame,
                 getPerkLevel,
                 getCellStructureCost,
@@ -2036,36 +2037,38 @@
             const rates = {};
             RESOURCES_DEF.forEach(r => { rates[r.id] = 0; });
 
-            // 1. 生命起源阶段：进化节点基础自动产出 + Evolve 细胞器/细胞核真实转录逻辑
-            let lifeMult = shardMult * (save.prestige.rapidMutation ? 2.0 : 1.0);
-            if (t.evo_organelle) lifeMult *= 1.10;
-            if (t.evo_nucleus) lifeMult *= 1.15;
-            if (t.evo_multicellular) lifeMult *= 1.15;
-            if (t.evo_vertebrate) lifeMult *= 1.20;
-            if (t.evo_mammal) lifeMult *= 1.20;
-            if (t.evo_primate) lifeMult *= 1.25;
+            // 1. 生命起源阶段：进化节点基础自动产出 + Evolve 细胞器/细胞核真实转录逻辑（进入农业时代后停用）
+            if (w.eraIndex === 0) {
+                let lifeMult = shardMult * (save.prestige.rapidMutation ? 2.0 : 1.0);
+                if (t.evo_organelle) lifeMult *= 1.10;
+                if (t.evo_nucleus) lifeMult *= 1.15;
+                if (t.evo_multicellular) lifeMult *= 1.15;
+                if (t.evo_vertebrate) lifeMult *= 1.20;
+                if (t.evo_mammal) lifeMult *= 1.20;
+                if (t.evo_primate) lifeMult *= 1.25;
 
-            if (t.evo_organelle) rates.rna += 0.25 * lifeMult;
-            if (t.evo_nucleus) rates.rna += 0.35 * lifeMult;
-            if (t.evo_nucleus) rates.dna += 0.15 * lifeMult;
-            if (t.evo_vertebrate) rates.dna += 0.25 * lifeMult;
+                if (t.evo_organelle) rates.rna += 0.25 * lifeMult;
+                if (t.evo_nucleus) rates.rna += 0.35 * lifeMult;
+                if (t.evo_nucleus) rates.dna += 0.15 * lifeMult;
+                if (t.evo_vertebrate) rates.dna += 0.25 * lifeMult;
 
-            // Evolve 细胞器自动复制产生 RNA (organelles)
-            const orgCnt = cells.organelles || 0;
-            if (orgCnt > 0) {
-                const perOrg = (t.evo_organelle ? 2.0 : 1.0) * (save.prestige.rapidMutation ? 2.0 : 1.0);
-                rates.rna += orgCnt * perOrg * shardMult;
-            }
+                // Evolve 细胞器自动复制产生 RNA (organelles)
+                const orgCnt = cells.organelles || 0;
+                if (orgCnt > 0) {
+                    const perOrg = (t.evo_organelle ? 2.0 : 1.0) * (save.prestige.rapidMutation ? 2.0 : 1.0);
+                    rates.rna += orgCnt * perOrg * shardMult;
+                }
 
-            // Evolve 细胞核将 2 RNA 转化为 1~2 DNA (nucleus)
-            const nucCnt = cells.nucleus || 0;
-            if (nucCnt > 0 && (w.res.dna || 0) < (metrics.caps.dna || 150)) {
-                const rnaNeedPerSec = nucCnt * 2.0;
-                const availRna = (w.res.rna || 0) + Math.max(0, rates.rna * dt);
-                const ratio = rnaNeedPerSec * dt > 0 ? Math.min(1, availRna / (rnaNeedPerSec * dt)) : 0;
-                const dnaOutPerNuc = t.evo_vertebrate ? 2.0 : 1.0;
-                rates.rna -= rnaNeedPerSec * ratio;
-                rates.dna += nucCnt * dnaOutPerNuc * ratio * shardMult;
+                // Evolve 细胞核将 2 RNA 转化为 1~2 DNA (nucleus)
+                const nucCnt = cells.nucleus || 0;
+                if (nucCnt > 0 && (w.res.dna || 0) < (metrics.caps.dna || 150)) {
+                    const rnaNeedPerSec = nucCnt * 2.0;
+                    const availRna = (w.res.rna || 0) + Math.max(0, rates.rna * dt);
+                    const ratio = rnaNeedPerSec * dt > 0 ? Math.min(1, availRna / (rnaNeedPerSec * dt)) : 0;
+                    const dnaOutPerNuc = t.evo_vertebrate ? 2.0 : 1.0;
+                    rates.rna -= rnaNeedPerSec * ratio;
+                    rates.dna += nucCnt * dnaOutPerNuc * ratio * shardMult;
+                }
             }
 
             let happyMult = 1.0;
@@ -2927,8 +2930,10 @@
         function updateLeftResourceCards() {
             const w = save.world;
             let unlockedCount = 0;
+            const totalResCount = w.eraIndex >= 1 ? RESOURCES_DEF.length - 2 : RESOURCES_DEF.length;
             for (const r of RESOURCES_DEF) {
-                const isUnlocked = !!w.unlockedRes[r.id];
+                const isRetiredBio = w.eraIndex >= 1 && (r.id === 'rna' || r.id === 'dna');
+                const isUnlocked = !isRetiredBio && !!w.unlockedRes[r.id];
                 const card = document.getElementById(`lres-card-${r.id}`);
                 if (!card) continue;
                 if (!isUnlocked) {
@@ -2964,7 +2969,7 @@
                 }
             }
             const cntEl = document.getElementById('left-res-count');
-            if (cntEl) cntEl.textContent = `已解锁 ${unlockedCount}/26`;
+            if (cntEl) cntEl.textContent = `已解锁 ${unlockedCount}/${totalResCount}`;
         }
 
         function formatCostInline(costObj) {
@@ -3013,10 +3018,18 @@
                 cityTitleEl.textContent = `[${getCityTitle(w.pop)}]`;
                 cityTitleEl.classList.remove('hidden');
                 speciesEl.textContent = `${curSpec.icon}${curSpec.name.split(' ')[0]}`;
+                speciesEl.title = '当前轮回定型物种（不可再次转化）';
                 speciesEl.classList.remove('hidden');
             } else {
                 cityTitleEl.classList.add('hidden');
                 speciesEl.classList.add('hidden');
+            }
+
+            const tabEvoIcon = document.getElementById('tab-evo-icon');
+            const tabEvoLabel = document.getElementById('tab-evo-label');
+            if (tabEvoIcon && tabEvoLabel) {
+                tabEvoIcon.textContent = w.eraIndex === 0 ? '🧬' : '👥';
+                tabEvoLabel.textContent = w.eraIndex === 0 ? '生命进化' : '人口/内政';
             }
 
             if (window.EvolveModules && window.EvolveModules.UI) {
@@ -3115,7 +3128,7 @@
             const hasIdle = w.eraIndex >= 1 && (Math.floor(w.pop) - assigned) > 0;
             document.getElementById('badge-evo').classList.toggle('show', canEvo || hasIdle);
 
-            const canTech = TECHS_DEF.some(t => !w.techs[t.id] && t.era <= w.eraIndex && t.req.every(r => !!w.techs[r]) && canAffordCost(getEffectiveTechCost(t)));
+            const canTech = TECHS_DEF.some(t => t.era >= 1 && !w.techs[t.id] && t.era <= w.eraIndex && t.req.every(r => !!w.techs[r]) && canAffordCost(getEffectiveTechCost(t)));
             document.getElementById('badge-tech').classList.toggle('show', canTech);
 
             const allExtraDefs = [...EVOLVE_EXTRA_BLDS_DEF, ...((dl && dl.DATA.extraBuildings) || [])];
@@ -3475,6 +3488,10 @@
 
                 const specBtn = e.target.closest('button[data-species]');
                 if (specBtn) {
+                    if (save.world.eraIndex >= 1 || save.world.techs.evo_sapiens) {
+                        showToast('🧬 当前轮回物种已完成进化定型，无法再次转化！可在【核爆/跃迁】中预设下一轮物种。');
+                        return;
+                    }
                     const specId = specBtn.dataset.species;
                     save.world.species = specId;
                     const dl = window.EvolveModules && window.EvolveModules.DataLoader;

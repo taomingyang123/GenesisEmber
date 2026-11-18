@@ -41,6 +41,8 @@
       recomputeCapacities: host.recomputeCapacities,
       showToast: host.showToast,
       isJobUnlocked: host.isJobUnlocked,
+      BUILDINGS_DEF: host.BUILDINGS_DEF,
+      EVOLVE_EXTRA_BLDS_DEF: host.EVOLVE_EXTRA_BLDS_DEF,
       tryBuyBuildingSingle: host.tryBuyBuildingSingle,
       tryBuyTechnology: host.tryBuyTechnology,
       addLog: (cat, text, tone) => evMod.addLog(ctx, cat, text, tone)

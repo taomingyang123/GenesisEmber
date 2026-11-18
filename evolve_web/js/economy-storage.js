@@ -400,9 +400,32 @@
     return { bMax, rMax };
   }
 
+  function getBuildingMaxCount(ctx, bldId, isExtra) {
+    const dl = getDL();
+    let def = null;
+    if (isExtra) {
+      def = (ctx.EVOLVE_EXTRA_BLDS_DEF && ctx.EVOLVE_EXTRA_BLDS_DEF.find(b => b.id === bldId))
+        || (dl && dl.MAPS && dl.MAPS.extraBuildings && dl.MAPS.extraBuildings[bldId])
+        || null;
+    } else {
+      def = (ctx.BUILDINGS_DEF && ctx.BUILDINGS_DEF.find(b => b.id === bldId)) || null;
+      if (!def && bldId === 'colonyShip') return 1;
+    }
+    return def && def.maxCount ? def.maxCount : 0;
+  }
+
   function enqueueBuild(ctx, bldId, isExtra) {
     const w = ctx.save.world;
     ensureEconomyFields(w);
+    const maxCount = getBuildingMaxCount(ctx, bldId, isExtra);
+    if (maxCount > 0) {
+      const store = isExtra ? (w.extraBlds || {}) : (w.buildings || {});
+      const owned = store[bldId] || 0;
+      const queued = w.buildQueue.filter(item => item.id === bldId && !!item.isExtra === !!isExtra).length;
+      if (owned + queued >= maxCount) {
+        return { ok: false, msg: `该建筑已达建造或排队上限 (${maxCount})！` };
+      }
+    }
     const { bMax } = getQueueLimits(ctx.save);
     if (w.buildQueue.length >= bMax) {
       return { ok: false, msg: `建筑队列已满 (${w.buildQueue.length}/${bMax})！` };
@@ -429,12 +452,19 @@
     ensureEconomyFields(w);
     if (w.queuePaused) return;
 
-    // 1. 建筑队列队首自动建造
-    if (w.buildQueue.length > 0 && ctx.tryBuyBuildingSingle) {
+    // 1. 建筑队列队首自动建造（若已达上限则自动清理出队）
+    while (w.buildQueue.length > 0) {
       const head = w.buildQueue[0];
-      if (ctx.tryBuyBuildingSingle(head.id, head.isExtra)) {
+      const maxCount = getBuildingMaxCount(ctx, head.id, head.isExtra);
+      const store = head.isExtra ? (w.extraBlds || {}) : (w.buildings || {});
+      if (maxCount > 0 && (store[head.id] || 0) >= maxCount) {
+        w.buildQueue.shift();
+        continue;
+      }
+      if (ctx.tryBuyBuildingSingle && ctx.tryBuyBuildingSingle(head.id, head.isExtra)) {
         w.buildQueue.shift();
       }
+      break;
     }
 
     // 2. 研究队列（支持乱序查找所有前置满足的靠前研究，或队首研发）
