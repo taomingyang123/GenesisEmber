@@ -1,0 +1,1234 @@
+<!-- 物种与星系环境概览复用模板 -->
+<template name="speciesSummaryCard">
+  <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+    <view class="flex items-center justify-between flex-wrap gap-1" style="border-bottom:1px solid var(--border-dim); padding-bottom:4px;">
+      <text class="font-bold text-purple text-xs">{{summary.specTitle}} <text wx:if="{{summary.locked}}" class="text-10 text-dim">🔒本轮已定型</text></text>
+      <text class="text-10 text-emerald">{{summary.envTitle}}</text>
+    </view>
+    <text class="text-10 text-muted">{{summary.descHome}}</text>
+    <view class="flex items-center gap-1 flex-wrap">
+      <text wx:for="{{summary.traits}}" wx:key="id" class="text-10 font-bold trait-badge {{item.positive ? '' : 'neg'}}">{{item.positive ? '✦' : '▼'}} {{item.name}}</text>
+    </view>
+    <view class="text-10 text-sky flex flex-col" style="background:var(--bg-main); padding:5px 7px; border-radius:4px;">
+      <view wx:for="{{summary.traits}}" wx:key="id">• <text class="font-bold">{{item.name}}</text>：{{item.desc}}</view>
+    </view>
+  </view>
+</template>
+
+<!-- 资源消耗列表复用模板 -->
+<template name="costPartsList">
+  <text wx:for="{{parts}}" wx:key="id" class="{{item.ok ? 'text-emerald' : 'text-rose'}}" style="margin-right:4px;">{{item.name}}:{{item.val}}</text>
+</template>
+
+<view class="app-root {{isLightTheme ? 'theme-light-mode' : ''}}" style="{{themeVarsStyle}}">
+  <view class="app-shell" style="padding-top:{{viewport.headerTopPad}}px; padding-bottom:{{viewport.shellBottomPad}}px;">
+
+    <!-- 顶部全局状态与主线任务栏 -->
+    <view class="top-header pixel-box">
+      <view class="header-row-top">
+        <view class="era-badge-wrap" style="{{!viewport.isWide && viewport.capsuleOccupyWidth > 0 ? 'width:100%; padding-right:' + viewport.capsuleOccupyWidth + 'px; min-height:' + viewport.capsuleRowHeight + 'px;' : ''}}">
+          <view class="era-icon-box">{{header.eraIcon}}</view>
+          <view class="min-w-0 flex-1">
+            <view class="flex items-center gap-1 flex-wrap">
+              <text class="text-10 text-emerald font-bold">{{header.eraStep}}</text>
+              <text wx:if="{{header.showCityTitle}}" class="text-10 text-amber font-bold">{{header.cityTitle}}</text>
+              <text wx:if="{{header.showSpeciesBadge}}" class="text-10 text-sky font-bold">{{header.speciesBadge}}</text>
+            </view>
+            <view class="era-name-text font-bold">{{header.eraName}}</view>
+          </view>
+        </view>
+
+        <view class="kpi-strip">
+          <view wx:if="{{header.showPopBox}}" class="kpi-pill" bindtap="onPopPillTap">
+            <text class="kpi-label">人口 / 士气</text>
+            <text class="kpi-val text-sky">{{header.popText}} <text class="text-emerald">{{header.happyText}}</text></text>
+          </view>
+          <view class="kpi-pill" bindtap="onKpiResTap">
+            <text class="kpi-label">{{header.kpi1Label}}</text>
+            <text class="kpi-val text-amber">{{header.kpi1Val}}</text>
+          </view>
+          <view class="kpi-pill" bindtap="onKpiResTap">
+            <text class="kpi-label">{{header.kpi2Label}}</text>
+            <text class="kpi-val text-emerald">{{header.kpi2Val}}</text>
+          </view>
+          <view class="kpi-pill prestige-pill" bindtap="onPrestigePillTap">
+            <text class="kpi-label">🧬 质粒/余烬 <text class="text-amber">{{header.shardBonusText}}</text></text>
+            <text class="kpi-val text-purple">{{header.shardsText}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="mission-banner" bindtap="onMissionBannerTap">
+        <view class="mission-ellipsis">
+          <text class="text-amber font-bold">{{header.missionId}}</text>
+          <text class="mission-text-main"> {{header.missionText}}</text>
+        </view>
+        <text class="text-emerald font-bold shrink-0">{{header.missionProg}}</text>
+      </view>
+
+      <scroll-view scroll-x="true" show-scrollbar="false" class="weather-strip" bindtap="onWeatherTap">
+        <view class="weather-strip-inner">
+          <block wx:if="{{header.weatherOrigin}}">
+            <text>{{header.weatherBiome}}</text>
+            <text>·</text>
+            <text>{{header.weatherUniv}}</text>
+            <text>·</text>
+            <text>{{header.weatherZodiac}}</text>
+            <text>·</text>
+            <text class="text-purple">🧬 原初汤演化中</text>
+          </block>
+          <block wx:else>
+            <text>{{header.weatherDate}}</text>
+            <text>{{header.weatherSeason}}</text>
+            <text>{{header.weatherCond}}</text>
+            <text>{{header.weatherMoon}}</text>
+            <text>{{header.weatherZodiac}}</text>
+            <text wx:if="{{header.showWeatherPower}}" class="{{header.weatherPowerCls}}">{{header.weatherPowerText}}</text>
+            <text wx:if="{{header.showWeatherMastery}}" class="text-amber">{{header.weatherMasteryText}}</text>
+          </block>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 主工作区 -->
+    <view class="main-workspace">
+      <!-- 左侧：紧凑正方形像素舞台 + 全文明资源监控 + 双操作按钮 -->
+      <view class="left-pane pixel-box">
+        <view class="stage-top-row">
+          <view id="canvas-wrapper" class="canvas-wrapper" bindtap="onStageTap">
+            <canvas id="pixel-canvas" type="2d" class="pixel-canvas"></canvas>
+            <view class="canvas-caption">{{stage.caption}}</view>
+          </view>
+
+          <view class="stage-info-col">
+            <view class="click-hint-badge" bindtap="onStageTap">点击正方形采集</view>
+            <text class="era-lore-text">{{stage.lore}}</text>
+            <view class="stage-meta-row">
+              <text>15FPS 节能</text>
+              <text>采集: <text class="text-sky font-bold">{{stage.clicks}}</text>次</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 左侧全文明资源监控区 -->
+        <view class="left-res-section">
+          <view class="res-section-hdr" bindtap="onLeftResTap">
+            <text>📊 全文明资源库存与净产率</text>
+            <text class="text-10 text-muted">{{leftResCount}}</text>
+          </view>
+          <view class="res-grid-wrap {{leftRes.length > 2 ? 'multi-row' : ''}}">
+            <scroll-view scroll-y="true" show-scrollbar="false" class="res-grid-scroll">
+              <view class="left-res-grid">
+                <view wx:for="{{leftRes}}" wx:key="id" class="res-mini-card" bindtap="onLeftResTap">
+                  <view class="res-mini-left">
+                    <text class="res-mini-name">{{item.name}}</text>
+                    <text class="res-mini-cap">{{item.valText}}</text>
+                  </view>
+                  <view class="res-mini-right">
+                    <text class="res-mini-rate {{item.rateCls}}">{{item.rateText}}</text>
+                    <text class="res-mini-eta">{{item.etaText}}</text>
+                  </view>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+        </view>
+
+        <!-- 底部时代专属操作 & 时代晋升状态按钮 -->
+        <view class="left-action-bar">
+          <button
+            class="pixel-btn action-main-btn {{stage.actCls}} {{stage.actDisabled ? 'is-disabled' : ''}}"
+            disabled="{{stage.actDisabled}}"
+            hover-class="{{stage.actDisabled ? 'none' : 'pixel-btn-hover'}}"
+            hover-stay-time="60"
+            bindtap="onEraActionTap"
+          >
+            <text class="action-btn-line text-xs font-bold">{{stage.actTitle}}</text>
+            <text class="action-btn-line text-10" style="opacity:0.9;">{{stage.actSub}}</text>
+          </button>
+          <button
+            class="pixel-btn action-main-btn {{stage.nextCls}} {{stage.nextDisabled ? 'is-disabled' : ''}}"
+            disabled="{{stage.nextDisabled}}"
+            hover-class="{{stage.nextDisabled ? 'none' : 'pixel-btn-hover'}}"
+            hover-stay-time="60"
+            bindtap="onNextEraTap"
+          >
+            <text class="action-btn-line text-11 font-bold">{{stage.nextTitle}}</text>
+            <text class="action-btn-line text-10 {{stage.nextDisabled ? 'text-muted' : ''}}">{{stage.nextSub}}</text>
+          </button>
+        </view>
+      </view>
+
+      <!-- 右侧：5 大独立功能标签页 -->
+      <view class="right-pane pixel-box">
+        <view class="tab-bar">
+          <button class="tab-btn {{activeTab === 'evo' ? 'active' : ''}}" data-tab="evo" bindtap="onSwitchTab">
+            <text>{{evoTabIcon}}</text><text>{{evoTabLabel}}</text>
+            <view wx:if="{{badges.evo}}" class="tab-badge"></view>
+          </button>
+          <button class="tab-btn {{activeTab === 'bld' ? 'active' : ''}}" data-tab="bld" bindtap="onSwitchTab">
+            <text>🏛️</text><text>建筑/工业</text>
+            <view wx:if="{{badges.bld}}" class="tab-badge"></view>
+          </button>
+          <button class="tab-btn {{activeTab === 'tech' ? 'active' : ''}}" data-tab="tech" bindtap="onSwitchTab">
+            <text>🔬</text><text>科技研究</text>
+            <view wx:if="{{badges.tech}}" class="tab-badge"></view>
+          </button>
+          <button class="tab-btn {{activeTab === 'prestige' ? 'active' : ''}}" data-tab="prestige" bindtap="onSwitchTab">
+            <text>☢️</text><text>核爆/跃迁</text>
+            <view wx:if="{{badges.prestige}}" class="tab-badge"></view>
+          </button>
+          <button class="tab-btn {{activeTab === 'sys' ? 'active' : ''}}" data-tab="sys" bindtap="onSwitchTab">
+            <text>📊</text><text>百科/设置</text>
+          </button>
+        </view>
+
+        <!-- 子页签条 -->
+        <scroll-view wx:if="{{subTabs.length > 0}}" scroll-x="true" show-scrollbar="false" class="subtab-bar">
+          <view class="subtab-bar-inner">
+            <button
+              wx:for="{{subTabs}}"
+              wx:key="id"
+              class="subtab-btn {{item.active ? 'active' : ''}}"
+              data-subtab="{{item.id}}"
+              bindtap="onSwitchSubTab"
+            >{{item.label}}</button>
+          </view>
+        </scroll-view>
+
+        <!-- 主体滚动内容区 -->
+        <view class="tab-content-wrap">
+          <scroll-view scroll-y="true" show-scrollbar="false" scroll-top="{{tabScrollTop}}" class="tab-content-scroll">
+            <view class="tab-content-inner">
+
+              <!-- 0. 生命起源阶段未解锁建筑/科技引导 -->
+              <view wx:if="{{panel.kind === 'origin_locked'}}" class="pixel-card flex flex-col items-center gap-3 text-center" style="padding:22px 14px;">
+                <text class="font-bold text-amber text-xs">{{panel.title}}</text>
+                <text class="text-11 text-muted">{{panel.desc}}</text>
+                <button class="pixel-btn bg-emerald text-11 font-bold" style="padding:6px 14px;" hover-class="pixel-btn-hover" data-goto="evo:evo_species" bindtap="onGotoTab">🧬 前往【生命进化】</button>
+              </view>
+
+              <view wx:elif="{{panel.kind === 'locked_msg'}}" class="pixel-card text-center text-muted text-xs" style="padding:20px;">{{panel.msg}}</view>
+
+              <!-- 1A. 生命进化与物种选择器 -->
+              <block wx:elif="{{panel.kind === 'evo_species'}}">
+                <template is="speciesSummaryCard" data="{{summary: panel.summary}}" />
+
+                <view wx:if="{{!panel.speciesLocked}}" class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="flex items-center justify-between flex-wrap gap-1">
+                    <text class="font-bold text-sky text-xs">🧬 物种演化图谱 (34 物种 / 16 种群)</text>
+                    <text class="text-10 text-muted">定型前可选择本轮演化物种</text>
+                  </view>
+                  <view class="flex items-center gap-1 flex-wrap">
+                    <button class="pixel-btn {{panel.genusFilter === 'all' ? 'bg-sky' : 'bg-slate'}} text-10" style="padding:2px 6px;" data-genus="all" bindtap="onSelectGenusFilter">全部</button>
+                    <button
+                      wx:for="{{panel.genera}}"
+                      wx:key="id"
+                      class="pixel-btn {{item.active ? 'bg-sky' : 'bg-slate'}} text-10"
+                      style="padding:2px 6px;"
+                      data-genus="{{item.id}}"
+                      bindtap="onSelectGenusFilter"
+                    >{{item.icon}}{{item.shortName}}</button>
+                  </view>
+                  <scroll-view scroll-y="true" show-scrollbar="false" class="species-grid-scroll">
+                    <view class="species-grid">
+                      <button
+                        wx:for="{{panel.speciesList}}"
+                        wx:key="id"
+                        class="pixel-btn species-chip-btn {{item.active ? 'bg-emerald' : 'bg-slate'}} text-10 font-bold"
+                        data-species="{{item.id}}"
+                        bindtap="onSelectSpecies"
+                      >
+                        <text>{{item.icon}}</text><text class="species-chip-name">{{item.name}}</text>
+                      </button>
+                    </view>
+                  </scroll-view>
+                </view>
+
+                <view wx:if="{{panel.showCells}}" class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="flex items-center justify-between" style="border-bottom:1px solid var(--border-dim); padding-bottom:4px;">
+                    <text class="font-bold text-amber text-xs">🦠 细胞亚结构合成 (原生质阶段)</text>
+                    <text class="text-10 text-muted">可重复扩建RNA/DNA上限与自动转录</text>
+                  </view>
+                  <view class="flex flex-col gap-2">
+                    <view wx:for="{{panel.cells}}" wx:key="id" class="sub-row-box flex items-center justify-between gap-2">
+                      <view class="min-w-0 flex-1">
+                        <view class="font-bold text-xs text-amber">{{item.name}} <text class="text-sky">[Lv.{{item.level}}]</text></view>
+                        <view class="text-10 text-muted">{{item.desc}}</view>
+                        <view class="text-10">消耗: <template is="costPartsList" data="{{parts: item.costParts}}" /></view>
+                      </view>
+                      <button
+                        class="pixel-btn {{item.afford ? 'bg-amber' : 'bg-slate'}} text-11 font-bold shrink-0"
+                        style="min-height:34px; padding:4px 10px;"
+                        disabled="{{!item.afford}}"
+                        hover-class="{{item.afford ? 'pixel-btn-hover' : 'none'}}"
+                        data-cell="{{item.id}}"
+                        bindtap="onBuyCell"
+                      >合成 +1</button>
+                    </view>
+                  </view>
+                </view>
+
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="flex items-center justify-between" style="border-bottom:1px solid var(--border-dim); padding-bottom:4px;">
+                    <text class="font-bold text-emerald text-xs">🧬 生命基因进化主链 (8 阶段)</text>
+                    <text class="text-10 text-muted">{{panel.evoSapiensDone ? '✅ 已完成智人演化' : '向智慧生命演进'}}</text>
+                  </view>
+                  <view class="flex flex-col gap-2">
+                    <view wx:for="{{panel.evoNodes}}" wx:key="id" class="sub-row-box {{item.done ? 'done-box' : ''}} flex items-center justify-between gap-2">
+                      <view class="min-w-0 flex-1">
+                        <view class="font-bold text-xs {{item.done ? 'text-emerald' : 'text-sky'}}">{{item.title}}</view>
+                        <view class="text-10 text-muted">{{item.desc}}</view>
+                        <view wx:if="{{item.done}}" class="text-10 text-emerald">✅ 已完成进化</view>
+                        <view wx:elif="{{!item.reqOk}}" class="text-10 text-rose">前置: {{item.reqText}}</view>
+                        <view wx:else class="text-10">消耗: <template is="costPartsList" data="{{parts: item.costParts}}" /></view>
+                      </view>
+                      <button
+                        wx:if="{{!item.done}}"
+                        class="pixel-btn {{item.afford ? 'bg-emerald' : 'bg-slate'}} text-11 font-bold shrink-0"
+                        style="min-height:34px; padding:4px 10px;"
+                        disabled="{{!item.afford}}"
+                        hover-class="{{item.afford ? 'pixel-btn-hover' : 'none'}}"
+                        data-tech="{{item.id}}"
+                        bindtap="onResearchTech"
+                      >进化</button>
+                    </view>
+                  </view>
+                </view>
+              </block>
+
+              <!-- 1B. 人口与职业 -->
+              <block wx:elif="{{panel.kind === 'evo_pop'}}">
+                <template is="speciesSummaryCard" data="{{summary: panel.summary}}" />
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="flex items-center justify-between flex-wrap gap-1" style="border-bottom:1px solid var(--border-dim); padding-bottom:4px;">
+                    <text class="font-bold text-sky text-xs">👥 市民人口与 15 种职业分工</text>
+                    <text class="text-11">空闲市民: <text class="text-amber font-bold">{{panel.idle}}</text> / {{panel.totalPop}} (住房 {{panel.popCap}})</text>
+                  </view>
+                  <view style="background:var(--bg-main); border:1px solid #1e3a2f; border-radius:4px; padding:6px;" class="flex items-center justify-between flex-wrap gap-2">
+                    <view class="min-w-0 flex-1">
+                      <view class="text-emerald font-bold text-11">📈 人口自然增速: {{panel.growthRateText}}</view>
+                      <view class="text-10 text-muted">{{panel.growthDetailText}}</view>
+                    </view>
+                    <button
+                      class="pixel-btn {{panel.canRecruit ? 'bg-emerald' : 'bg-slate'}} text-11 font-bold shrink-0"
+                      style="min-height:34px; padding:4px 8px;"
+                      disabled="{{!panel.canRecruit}}"
+                      hover-class="{{panel.canRecruit ? 'pixel-btn-hover' : 'none'}}"
+                      bindtap="onRecruitPop"
+                    >{{panel.recruitText}}</button>
+                  </view>
+                  <view class="flex flex-col gap-1">
+                    <view wx:for="{{panel.jobs}}" wx:key="id" class="sub-row-box flex items-center justify-between gap-2" style="padding:5px 7px;">
+                      <view class="min-w-0 flex-1">
+                        <view class="font-bold text-xs">{{item.name}} <text class="text-amber">[{{item.count}}人]</text></view>
+                        <view class="text-10 text-muted">{{item.desc}}</view>
+                      </view>
+                      <view class="flex items-center gap-1 shrink-0">
+                        <button class="pixel-btn bg-slate font-bold text-10" style="height:28px; padding:0 6px;" data-job="{{item.id}}" data-delta="-5" bindtap="onAdjustJob">-5</button>
+                        <button class="pixel-btn bg-slate font-bold" style="width:28px; height:28px;" data-job="{{item.id}}" data-delta="-1" bindtap="onAdjustJob">-</button>
+                        <button class="pixel-btn bg-sky font-bold" style="width:28px; height:28px;" data-job="{{item.id}}" data-delta="1" bindtap="onAdjustJob">+</button>
+                        <button class="pixel-btn bg-indigo font-bold text-10" style="height:28px; padding:0 6px;" data-job="{{item.id}}" data-delta="5" bindtap="onAdjustJob">+5</button>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+              </block>
+
+              <!-- 1C. 政体、税收与军事外交 -->
+              <block wx:elif="{{panel.kind === 'evo_gov'}}">
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="flex items-center justify-between flex-wrap gap-1" style="border-bottom:1px solid var(--border-dim); padding-bottom:4px;">
+                    <text class="font-bold text-amber text-xs">🏛️ 政府体制 · 【{{panel.cityTitle}}】</text>
+                    <text class="text-10 text-emerald">税收: +{{panel.taxIncomeText}}/s | 士气: {{panel.happiness}}%</text>
+                  </view>
+                  <view class="flex items-center gap-1 flex-wrap">
+                    <button
+                      wx:for="{{panel.govs}}"
+                      wx:key="id"
+                      class="pixel-btn {{item.active ? 'bg-indigo' : 'bg-slate'}} text-10 font-bold"
+                      style="padding:3px 7px; min-height:26px;"
+                      data-gov="{{item.id}}"
+                      bindtap="onSwitchGov"
+                    >{{item.name}}</button>
+                  </view>
+                  <view class="text-10 text-sky" style="background:var(--bg-main); padding:4px 6px; border-radius:3px;">
+                    📜 <text class="font-bold">{{panel.curGovName}}</text>：{{panel.curGovDesc}}
+                  </view>
+                  <view class="flex items-center justify-between flex-wrap gap-2">
+                    <view class="flex items-center gap-1 flex-wrap">
+                      <text class="text-10 text-muted">税率:</text>
+                      <button
+                        wx:for="{{panel.taxLevels}}"
+                        wx:key="val"
+                        class="pixel-btn {{item.active ? 'bg-amber' : 'bg-slate'}} text-10 font-bold"
+                        style="padding:2px 7px; min-height:24px;"
+                        data-tax="{{item.val}}"
+                        bindtap="onSetTax"
+                      >{{item.val}}%</button>
+                    </view>
+                    <text wx:if="{{panel.revoltWarning}}" class="text-10 text-rose font-bold">⚠️ 税率过高有抗税暴动风险！</text>
+                  </view>
+                </view>
+
+                <view wx:if="{{panel.eraLockedMilitary}}" class="pixel-card text-11 text-muted" style="padding:10px;">
+                  ⚔️ 晋升【城市文明】后将开启周边三国地图、军事驻军、战役掠夺与间谍情报战！
+                </view>
+                <block wx:elif="{{panel.military}}">
+                  <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                    <view class="flex items-center justify-between flex-wrap gap-1" style="border-bottom:1px solid var(--border-dim); padding-bottom:4px;">
+                      <text class="font-bold text-rose text-xs">⚔️ 军事驻军与作战指挥</text>
+                      <text class="text-10 text-amber">士兵: {{panel.military.soldiers}}/{{panel.military.maxS}} (伤兵:{{panel.military.wounded}}) | 出征战力: {{panel.military.combatPower}}</text>
+                    </view>
+                    <view class="flex items-center justify-between flex-wrap gap-2">
+                      <view class="flex items-center gap-1">
+                        <text class="text-10 text-muted">投入兵力:</text>
+                        <button class="pixel-btn bg-slate text-10 font-bold" style="width:26px;height:26px;" data-delta="-5" bindtap="onAdjustRaid">-5</button>
+                        <button class="pixel-btn bg-slate text-10 font-bold" style="width:26px;height:26px;" data-delta="-1" bindtap="onAdjustRaid">-</button>
+                        <text class="text-sky text-xs font-bold" style="min-width:24px; text-align:center;">{{panel.military.raidSize}}</text>
+                        <button class="pixel-btn bg-sky text-10 font-bold" style="width:26px;height:26px;" data-delta="1" bindtap="onAdjustRaid">+</button>
+                        <button class="pixel-btn bg-indigo text-10 font-bold" style="width:26px;height:26px;" data-delta="5" bindtap="onAdjustRaid">+5</button>
+                      </view>
+                      <button
+                        class="pixel-btn {{panel.military.canMerc ? 'bg-amber' : 'bg-slate'}} text-10 font-bold"
+                        style="min-height:28px; padding:2px 8px;"
+                        bindtap="onHireMerc"
+                      >💰 聘请雇佣兵 ({{panel.military.mercCostText}}币)</button>
+                    </view>
+                    <view class="flex items-center gap-1 flex-wrap">
+                      <text class="text-10 text-muted">战术规模:</text>
+                      <button
+                        wx:for="{{panel.military.tactics}}"
+                        wx:key="id"
+                        class="pixel-btn {{item.active ? 'bg-rose' : 'bg-slate'}} text-10"
+                        style="padding:2px 7px;"
+                        data-tactic="{{item.id}}"
+                        bindtap="onSetTactic"
+                      >{{item.name}}</button>
+                    </view>
+                    <view class="text-10 text-muted">{{panel.military.curTacticDesc}}</view>
+                  </view>
+
+                  <view
+                    wx:for="{{panel.military.foreigns}}"
+                    wx:key="idx"
+                    class="pixel-card flex flex-col gap-2"
+                    style="padding:7px 8px; border-color:{{item.controlled ? '#10b981' : 'var(--border-dim)'}};"
+                  >
+                    <view class="flex items-center justify-between flex-wrap gap-1">
+                      <text class="font-bold text-xs {{item.controlled ? 'text-emerald' : 'text-sky'}}">🏴 {{item.name}} {{item.statusTag}}</text>
+                      <text class="text-10 text-muted">军力:{{item.mil}} | 敌意:{{item.hstl}}% | 内乱:{{item.unrest}}% | 间谍:{{item.spy}}{{item.spyTrainSec > 0 ? '(培训' + item.spyTrainSec + 's)' : ''}}</text>
+                    </view>
+                    <view class="flex items-center justify-between flex-wrap gap-1">
+                      <text class="text-10 {{item.assessCls}}">战力预估: {{item.assessLabel}} ({{item.assessText}})</text>
+                      <view class="flex items-center gap-1 flex-wrap">
+                        <button
+                          class="pixel-btn {{item.controlled ? 'bg-slate' : 'bg-rose'}} text-10 font-bold"
+                          style="padding:3px 8px; min-height:26px;"
+                          data-idx="{{item.idx}}"
+                          bindtap="onLaunchCampaign"
+                        >{{item.controlled ? '🏳️ 撤出释放' : '⚔️ 发起战役'}}</button>
+                        <button
+                          wx:if="{{!item.controlled}}"
+                          class="pixel-btn {{item.spyTrainSec > 0 ? 'bg-slate' : 'bg-sky'}} text-10 font-bold"
+                          style="padding:3px 8px; min-height:26px;"
+                          disabled="{{item.spyTrainSec > 0}}"
+                          data-idx="{{item.idx}}"
+                          bindtap="onTrainSpy"
+                        >🕵️ {{item.spyTrainSec > 0 ? '培训中' : '派间谍(' + item.spyCostText + '币)'}}</button>
+                      </view>
+                    </view>
+                    <view wx:if="{{!item.controlled && item.spy > 0}}" class="flex items-center gap-1 flex-wrap" style="border-top:1px dashed var(--border-dim); padding-top:4px;">
+                      <text class="text-10 text-muted">谍报:</text>
+                      <button class="pixel-btn bg-sky text-10" style="padding:2px 6px;" data-idx="{{item.idx}}" data-op="influence" bindtap="onSpyOp">🕊️ 亲善</button>
+                      <button class="pixel-btn bg-amber text-10" style="padding:2px 6px;" data-idx="{{item.idx}}" data-op="sabotage" bindtap="onSpyOp">💣 破坏</button>
+                      <button class="pixel-btn bg-amber text-10" style="padding:2px 6px;" data-idx="{{item.idx}}" data-op="incite" bindtap="onSpyOp">🔥 煽动</button>
+                      <button class="pixel-btn {{item.canAnnex ? 'bg-emerald' : 'bg-slate'}} text-10" style="padding:2px 6px;" data-idx="{{item.idx}}" data-op="annex" bindtap="onSpyOp">🏛️ 吞并</button>
+                      <button class="pixel-btn {{item.canBuy ? 'bg-purple' : 'bg-slate'}} text-10" style="padding:2px 6px;" data-idx="{{item.idx}}" data-op="purchase" bindtap="onSpyOp">💼 收购({{item.buyPriceText}})</button>
+                    </view>
+                  </view>
+                </block>
+              </block>
+
+              <!-- 1D. 总督面板 -->
+              <block wx:elif="{{panel.kind === 'evo_governor'}}">
+                <view wx:if="{{!panel.unlocked}}" class="pixel-card flex flex-col items-center gap-2 text-center" style="padding:20px;">
+                  <text class="text-muted text-xs">研究【货币】或解锁 CRISPR【总督】后即可招募并任命总督自动管理城邦内政！</text>
+                  <view class="flex items-center gap-2 flex-wrap justify-center">
+                    <button class="pixel-btn bg-sky text-11 font-bold" style="padding:5px 12px;" data-goto="tech:tech_tree" bindtap="onGotoTab">🔬 前往【科技树】</button>
+                    <button class="pixel-btn bg-purple text-11 font-bold" style="padding:5px 12px;" data-goto="prestige:pres_crispr" bindtap="onGotoTab">🧬 前往【CRISPR池】</button>
+                  </view>
+                </view>
+                <block wx:else>
+                  <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                    <view class="flex items-center justify-between flex-wrap gap-1" style="border-bottom:1px solid var(--border-dim); padding-bottom:4px;">
+                      <text class="font-bold text-sky text-xs">👔 总督任命与自动内政 ({{panel.activeTasks}}/{{panel.maxSlots}} 任务槽)</text>
+                      <button class="pixel-btn bg-indigo text-10 font-bold" style="padding:2px 8px;" bindtap="onRerollGovCandidates">🎲 更换候选人</button>
+                    </view>
+                    <view wx:if="{{panel.appointed}}" class="sub-row-box done-box flex items-center justify-between gap-2">
+                      <view class="flex-1 min-w-0">
+                        <view class="font-bold text-emerald text-xs">当前在任：{{panel.appointed.name}} · 【{{panel.appointed.title}}】</view>
+                        <view class="text-10 text-muted">{{panel.appointed.desc}} | 效果: {{panel.appointed.effectText}}</view>
+                      </view>
+                      <button class="pixel-btn bg-rose text-10 font-bold shrink-0" style="padding:3px 8px;" bindtap="onFireGovernor">解任</button>
+                    </view>
+                    <view wx:else class="text-11 text-amber">尚未任命总督，请从下方 3 位候选人中挑选一位辅助执政：</view>
+                    <view class="flex flex-col gap-1">
+                      <view wx:for="{{panel.candidates}}" wx:key="id" class="sub-row-box flex items-center justify-between gap-2">
+                        <view class="min-w-0 flex-1">
+                          <view class="font-bold text-xs text-amber">{{item.name}} ({{item.title}})</view>
+                          <view class="text-10 text-muted">{{item.effectText}}</view>
+                        </view>
+                        <button
+                          class="pixel-btn {{item.isCur ? 'bg-slate' : 'bg-emerald'}} text-10 font-bold shrink-0"
+                          style="padding:3px 9px;"
+                          disabled="{{item.isCur}}"
+                          data-id="{{item.id}}"
+                          bindtap="onAppointGovernor"
+                        >{{item.isCur ? '在任中' : '任命'}}</button>
+                      </view>
+                    </view>
+                  </view>
+
+                  <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                    <view class="font-bold text-emerald text-xs">⚙️ 总督自动化治理任务配置</view>
+                    <view wx:for="{{panel.tasks}}" wx:key="id" class="sub-row-box flex items-center justify-between gap-2" style="padding:5px 8px;">
+                      <view class="min-w-0 flex-1">
+                        <view class="font-bold text-11 {{item.on ? 'text-emerald' : 'text-main'}}">{{item.name}}</view>
+                        <view class="text-10 text-muted">{{item.desc}}</view>
+                      </view>
+                      <button
+                        class="pixel-btn {{item.on ? 'bg-emerald' : 'bg-slate'}} text-10 font-bold shrink-0"
+                        style="min-width:56px; padding:3px 8px;"
+                        data-id="{{item.id}}"
+                        bindtap="onToggleGovernorTask"
+                      >{{item.on ? '✓ 开启' : '关闭'}}</button>
+                    </view>
+                  </view>
+                </block>
+              </block>
+
+              <!-- 2A. 城市建筑 -->
+              <block wx:elif="{{panel.kind === 'bld_city'}}">
+                <view class="pixel-card flex items-center justify-between flex-wrap gap-2" style="padding:7px 8px;">
+                  <view class="text-xs font-bold text-amber">
+                    🏛️ 批量建造:
+                    <text wx:if="{{panel.hasElectricity}}" class="text-10 text-sky" style="margin-left:6px;">⚡{{panel.powerText}}</text>
+                  </view>
+                  <view class="flex items-center gap-1 flex-wrap">
+                    <button
+                      wx:for="{{panel.batchModes}}"
+                      wx:key="val"
+                      class="pixel-btn {{item.active ? 'bg-amber' : 'bg-slate'}} text-11 font-bold"
+                      style="min-height:28px; padding:2px 8px;"
+                      data-batch="{{item.val}}"
+                      bindtap="onSetBatch"
+                    >{{item.label}}</button>
+                  </view>
+                </view>
+
+                <view wx:if="{{panel.hasSmelting}}" class="pixel-card flex flex-col gap-1" style="padding:6px 8px;">
+                  <view class="flex items-center justify-between flex-wrap gap-1">
+                    <text class="text-11 font-bold text-sky">🔥 冶炼厂燃料 & 工匠焦点</text>
+                    <view class="flex items-center gap-1 flex-wrap">
+                      <button
+                        wx:for="{{panel.smelterModes}}"
+                        wx:key="id"
+                        class="pixel-btn {{item.active ? 'bg-amber' : 'bg-slate'}} text-10"
+                        style="padding:2px 6px;"
+                        data-mode="{{item.id}}"
+                        bindtap="onSetSmelter"
+                      >{{item.label}}</button>
+                    </view>
+                  </view>
+                  <view class="flex items-center justify-between flex-wrap gap-1">
+                    <text class="text-10 text-muted">工匠锻造偏向:</text>
+                    <view class="flex items-center gap-1 flex-wrap">
+                      <button
+                        wx:for="{{panel.craftModes}}"
+                        wx:key="id"
+                        class="pixel-btn {{item.active ? 'bg-sky' : 'bg-slate'}} text-10"
+                        style="padding:2px 6px;"
+                        data-focus="{{item.id}}"
+                        bindtap="onSetCraftFocus"
+                      >{{item.label}}</button>
+                    </view>
+                  </view>
+                </view>
+
+                <block wx:if="{{panel.extraBlds.length > 0}}">
+                  <view class="text-11 font-bold text-purple">✨ Evolve 战略、信仰、民生与核威慑建筑</view>
+                  <view wx:for="{{panel.extraBlds}}" wx:key="id" class="pixel-card flex items-center justify-between gap-2" style="padding:7px 8px; border-color:#5b21b6;">
+                    <view class="min-w-0 flex-1">
+                      <view class="flex items-center gap-1 flex-wrap">
+                        <text class="font-bold text-purple text-xs">{{item.name}}</text>
+                        <text class="text-10" style="background:var(--bg-main); padding:1px 5px; border-radius:3px;">已建 {{item.owned}}</text>
+                        <text class="text-10 text-dim">[{{item.eraName}}]</text>
+                      </view>
+                      <view class="text-10 text-muted" style="margin:2px 0;">{{item.desc}}</view>
+                      <view class="text-10">费用(+{{item.qty}}): <template is="costPartsList" data="{{parts: item.costParts}}" /></view>
+                    </view>
+                    <view class="flex items-center gap-1 shrink-0">
+                      <button class="pixel-btn bg-slate text-10 font-bold" style="min-height:34px; padding:4px 6px;" data-kind="extra" data-id="{{item.id}}" bindtap="onQueueBuild">+Q</button>
+                      <button
+                        class="pixel-btn {{item.afford ? 'bg-purple' : 'bg-slate'}} text-11 font-bold"
+                        style="min-height:34px; padding:4px 9px;"
+                        disabled="{{!item.afford}}"
+                        hover-class="{{item.afford ? 'pixel-btn-hover' : 'none'}}"
+                        data-id="{{item.id}}"
+                        bindtap="onBuildExtra"
+                      >建+{{item.qty}}</button>
+                    </view>
+                  </view>
+                </block>
+
+                <view wx:for="{{panel.stdBlds}}" wx:key="id" class="pixel-card flex items-center justify-between gap-2" style="padding:7px 8px;">
+                  <view class="min-w-0 flex-1">
+                    <view class="flex items-center gap-1 flex-wrap">
+                      <text class="font-bold text-amber text-xs">{{item.name}}</text>
+                      <text class="text-10" style="background:var(--bg-main); padding:1px 5px; border-radius:3px;">已建 {{item.ownedText}}</text>
+                      <text class="text-10 text-dim">[{{item.eraName}}]</text>
+                    </view>
+                    <view class="text-10 text-muted" style="margin:2px 0;">{{item.desc}}</view>
+                    <view wx:if="{{item.maxed}}" class="text-10 text-emerald">✅ 已达上限</view>
+                    <view wx:else class="text-10">费用(+{{item.qty}}): <template is="costPartsList" data="{{parts: item.costParts}}" /></view>
+                  </view>
+                  <view class="flex items-center gap-1 shrink-0">
+                    <button wx:if="{{!item.maxed}}" class="pixel-btn bg-slate text-10 font-bold" style="min-height:34px; padding:4px 6px;" data-kind="std" data-id="{{item.id}}" bindtap="onQueueBuild">+Q</button>
+                    <button
+                      class="pixel-btn {{item.afford ? 'bg-amber' : 'bg-slate'}} text-11 font-bold"
+                      style="min-height:34px; padding:4px 9px;"
+                      disabled="{{!item.afford}}"
+                      hover-class="{{item.afford ? 'pixel-btn-hover' : 'none'}}"
+                      data-id="{{item.id}}"
+                      bindtap="onBuildStd"
+                    >{{item.maxed ? '已满' : '建+' + item.qty}}</button>
+                  </view>
+                </view>
+              </block>
+
+              <!-- 2B. 电力与建造研究队列 -->
+              <block wx:elif="{{panel.kind === 'bld_power'}}">
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="flex items-center justify-between flex-wrap gap-1" style="border-bottom:1px solid var(--border-dim); padding-bottom:4px;">
+                    <text class="font-bold text-amber text-xs">⚡ 电网电力分配与通断控制</text>
+                    <text class="text-11 font-bold {{panel.powerSurplusCls}}">{{panel.powerSummary}}</text>
+                  </view>
+                  <view wx:if="{{panel.powerSwitches.length === 0}}" class="text-10 text-muted">
+                    尚未建造耗电设施。进入工业时代并建造工厂、钢厂或电厂后可在此精细管理电力配额。
+                  </view>
+                  <view wx:else class="flex flex-col gap-1">
+                    <view wx:for="{{panel.powerSwitches}}" wx:key="id" class="sub-row-box flex items-center justify-between gap-2" style="padding:4px 7px;">
+                      <text class="text-11">{{item.name}} <text class="text-muted">({{item.mw}}MW/座)</text></text>
+                      <view class="flex items-center gap-1">
+                        <button class="pixel-btn bg-slate text-10 font-bold" style="width:26px;height:24px;" data-kind="{{item.kind}}" data-id="{{item.id}}" data-delta="-1" bindtap="onTogglePower">-</button>
+                        <text class="text-11 font-bold {{item.allOn ? 'text-emerald' : 'text-amber'}}" style="min-width:46px; text-align:center;">{{item.on}}/{{item.total}} 开</text>
+                        <button class="pixel-btn bg-emerald text-10 font-bold" style="width:26px;height:24px;" data-kind="{{item.kind}}" data-id="{{item.id}}" data-delta="1" bindtap="onTogglePower">+</button>
+                      </view>
+                    </view>
+                  </view>
+                </view>
+
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="flex items-center justify-between flex-wrap gap-1" style="border-bottom:1px solid var(--border-dim); padding-bottom:4px;">
+                    <text class="font-bold text-sky text-xs">📋 建筑队列 ({{panel.buildQueue.length}}/{{panel.bMax}}) & 研究队列 ({{panel.researchQueue.length}}/{{panel.rMax}})</text>
+                    <button class="pixel-btn {{panel.queuePaused ? 'bg-rose' : 'bg-emerald'}} text-10 font-bold" style="padding:2px 8px;" bindtap="onToggleQueuePause">{{panel.queuePaused ? '▶ 恢复队列' : '⏸ 暂停队列'}}</button>
+                  </view>
+                  <view class="text-10 text-muted">在建筑或科技页点击【+Q】即可排队；资源攒够后自动顺序竣工/研发！</view>
+                  <view class="text-11 font-bold text-amber">建筑队列:</view>
+                  <view wx:if="{{panel.buildQueue.length === 0}}" class="text-10 text-dim">暂无排队建筑</view>
+                  <view wx:else class="flex flex-col gap-1">
+                    <view wx:for="{{panel.buildQueue}}" wx:key="idx" class="sub-row-box flex items-center justify-between" style="padding:4px 7px;">
+                      <text class="text-11">{{item.idx + 1}}. {{item.name}}</text>
+                      <button class="pixel-btn bg-rose text-10" style="padding:1px 6px;" data-idx="{{item.idx}}" bindtap="onRemoveBuildQueue">移除</button>
+                    </view>
+                  </view>
+                  <view class="text-11 font-bold text-sky" style="margin-top:4px;">研究队列:</view>
+                  <view wx:if="{{panel.researchQueue.length === 0}}" class="text-10 text-dim">暂无排队科技</view>
+                  <view wx:else class="flex flex-col gap-1">
+                    <view wx:for="{{panel.researchQueue}}" wx:key="idx" class="sub-row-box flex items-center justify-between" style="padding:4px 7px;">
+                      <text class="text-11">{{item.idx + 1}}. {{item.name}}</text>
+                      <button class="pixel-btn bg-rose text-10" style="padding:1px 6px;" data-idx="{{item.idx}}" bindtap="onRemoveResearchQueue">移除</button>
+                    </view>
+                  </view>
+                </view>
+              </block>
+
+              <!-- 2C. 自由市场与贸易路线 -->
+              <block wx:elif="{{panel.kind === 'bld_market'}}">
+                <view wx:if="{{!panel.unlockedCurrency}}" class="pixel-card flex flex-col items-center gap-2 text-center" style="padding:20px;">
+                  <text class="text-muted text-xs">需研究【货币】后解锁动态市场交易；研究【贸易】后解锁自动贸易路线！</text>
+                  <button class="pixel-btn bg-sky text-11 font-bold" style="padding:5px 12px;" data-goto="tech:tech_tree" bindtap="onGotoTab">🔬 前往【科技树】</button>
+                </view>
+                <block wx:else>
+                  <view class="pixel-card flex items-center justify-between flex-wrap gap-2" style="padding:7px 8px;">
+                    <view>
+                      <view class="font-bold text-amber text-xs">⚖️ 自由市场与自动贸易路线</view>
+                      <view class="text-10 text-muted">
+                        <text wx:if="{{panel.trUnlocked}}">自动贸易路线已用: <text class="text-emerald font-bold">{{panel.usedRoutes}}/{{panel.maxRoutes}}</text> (正=自动买入 / 负=自动卖出)</text>
+                        <text wx:else>研究【贸易】后解锁自动进出口路线</text>
+                      </view>
+                    </view>
+                    <view class="flex items-center gap-1">
+                      <text class="text-10 text-muted">单次数量:</text>
+                      <button
+                        wx:for="{{panel.qtys}}"
+                        wx:key="val"
+                        class="pixel-btn {{item.active ? 'bg-sky' : 'bg-slate'}} text-10 font-bold"
+                        style="padding:2px 6px;"
+                        data-qty="{{item.val}}"
+                        bindtap="onSetMarketQty"
+                      >{{item.val}}</button>
+                    </view>
+                  </view>
+
+                  <view wx:for="{{panel.items}}" wx:key="id" class="pixel-card flex items-center justify-between flex-wrap gap-2" style="padding:6px 8px;">
+                    <view class="min-w-0">
+                      <view class="font-bold text-xs text-main">{{item.name}} <text class="text-10 text-muted">存量:{{item.stockText}}</text></view>
+                      <view class="text-10 text-muted">买价: <text class="text-rose">{{item.buyPrice}}</text>币 | 卖价: <text class="text-emerald">{{item.sellPrice}}</text>币</view>
+                    </view>
+                    <view class="flex items-center gap-1 flex-wrap shrink-0">
+                      <button class="pixel-btn bg-sky text-10 font-bold" style="padding:3px 7px;" data-id="{{item.id}}" data-side="buy" bindtap="onMarketOrder">买</button>
+                      <button class="pixel-btn bg-amber text-10 font-bold" style="padding:3px 7px;" data-id="{{item.id}}" data-side="sell" bindtap="onMarketOrder">卖</button>
+                      <block wx:if="{{panel.trUnlocked}}">
+                        <button class="pixel-btn bg-slate text-10 font-bold" style="width:24px;height:24px;" data-id="{{item.id}}" data-delta="-1" bindtap="onAdjustRoute">-</button>
+                        <text class="text-10 font-bold {{item.routeCls}}" style="min-width:22px; text-align:center;">{{item.routeText}}</text>
+                        <button class="pixel-btn bg-emerald text-10 font-bold" style="width:24px;height:24px;" data-id="{{item.id}}" data-delta="1" bindtap="onAdjustRoute">+</button>
+                        <button wx:if="{{item.route !== 0}}" class="pixel-btn bg-rose text-10" style="padding:2px 5px;" data-id="{{item.id}}" data-delta="0" bindtap="onAdjustRoute">清</button>
+                      </block>
+                    </view>
+                  </view>
+                </block>
+              </block>
+
+              <!-- 2D. 物流板条箱与集装箱仓储 -->
+              <block wx:elif="{{panel.kind === 'bld_storage'}}">
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="font-bold text-amber text-xs">📦 物流板条箱 & 钢铁集装箱管理</view>
+                  <view class="flex items-center justify-between flex-wrap gap-2" style="background:var(--bg-main); padding:6px 8px; border-radius:4px;">
+                    <view>
+                      <view class="text-11 font-bold text-sky">板条箱: {{panel.st.freeCrates}} 空闲 / {{panel.st.cratesOwned}} 拥有 (上限 {{panel.st.crateCap}})</view>
+                      <view class="text-10 text-muted">每箱扩容 +{{panel.st.perCrate}} | 造价: {{panel.crateCostText}}</view>
+                    </view>
+                    <view class="flex items-center gap-1">
+                      <button class="pixel-btn bg-amber text-10 font-bold" style="padding:3px 8px;" data-kind="crate" data-count="1" bindtap="onMakeStorage">造+1</button>
+                      <button class="pixel-btn bg-amber text-10 font-bold" style="padding:3px 8px;" data-kind="crate" data-count="5" bindtap="onMakeStorage">造+5</button>
+                    </view>
+                  </view>
+                  <view wx:if="{{panel.steelUnlocked}}" class="flex items-center justify-between flex-wrap gap-2" style="background:var(--bg-main); padding:6px 8px; border-radius:4px;">
+                    <view>
+                      <view class="text-11 font-bold text-purple">集装箱: {{panel.st.freeContainers}} 空闲 / {{panel.st.containersOwned}} 拥有 (上限 {{panel.st.containerCap}})</view>
+                      <view class="text-10 text-muted">每柜扩容 +{{panel.st.perContainer}} | 造价: 35 钢材</view>
+                    </view>
+                    <view class="flex items-center gap-1">
+                      <button class="pixel-btn bg-purple text-10 font-bold" style="padding:3px 8px;" data-kind="container" data-count="1" bindtap="onMakeStorage">造+1</button>
+                      <button class="pixel-btn bg-purple text-10 font-bold" style="padding:3px 8px;" data-kind="container" data-count="5" bindtap="onMakeStorage">造+5</button>
+                    </view>
+                  </view>
+                  <view wx:else class="text-10 text-dim">研究【钢铁】后可制造高容量钢铁集装箱！</view>
+                </view>
+
+                <view wx:for="{{panel.items}}" wx:key="id" class="pixel-card flex items-center justify-between flex-wrap gap-2" style="padding:5px 8px;">
+                  <view class="text-11"><text class="font-bold">{{item.name}}</text> <text class="text-muted">(上限 {{item.capText}})</text></view>
+                  <view class="flex items-center gap-2 flex-wrap">
+                    <view class="flex items-center gap-1">
+                      <text class="text-10 text-sky">箱:</text>
+                      <button class="pixel-btn bg-slate text-10" style="width:22px;height:22px;" data-kind="crate" data-id="{{item.id}}" data-delta="-1" bindtap="onAssignStorage">-</button>
+                      <text class="text-10 font-bold" style="min-width:18px;text-align:center;">{{item.crates}}</text>
+                      <button class="pixel-btn bg-sky text-10" style="width:22px;height:22px;" data-kind="crate" data-id="{{item.id}}" data-delta="1" bindtap="onAssignStorage">+</button>
+                    </view>
+                    <view wx:if="{{panel.steelUnlocked}}" class="flex items-center gap-1">
+                      <text class="text-10 text-purple">柜:</text>
+                      <button class="pixel-btn bg-slate text-10" style="width:22px;height:22px;" data-kind="container" data-id="{{item.id}}" data-delta="-1" bindtap="onAssignStorage">-</button>
+                      <text class="text-10 font-bold" style="min-width:18px;text-align:center;">{{item.containers}}</text>
+                      <button class="pixel-btn bg-purple text-10" style="width:22px;height:22px;" data-kind="container" data-id="{{item.id}}" data-delta="1" bindtap="onAssignStorage">+</button>
+                    </view>
+                  </view>
+                </view>
+              </block>
+
+              <!-- 3A. 文明科技树 -->
+              <block wx:elif="{{panel.kind === 'tech_tree'}}">
+                <view class="pixel-card flex items-center justify-between gap-2" style="padding:6px 8px;">
+                  <text class="text-xs font-bold text-sky">🔬 文明科技树 ({{panel.doneCnt}}/{{panel.totalCnt}})</text>
+                  <button class="pixel-btn {{panel.hideDone ? 'bg-sky' : 'bg-slate'}} text-10 font-bold" style="min-height:28px; padding:2px 8px;" bindtap="onToggleHideDoneTechs">
+                    {{panel.hideDone ? '显示已研究' : '隐藏已研究'}}
+                  </button>
+                </view>
+
+                <view
+                  wx:for="{{panel.items}}"
+                  wx:key="id"
+                  class="pixel-card flex items-center justify-between gap-2"
+                  style="padding:7px 8px; {{item.done ? 'background:rgba(16,185,129,0.08); border-color:#065f46;' : ''}}"
+                >
+                  <view class="min-w-0 flex-1">
+                    <view class="flex items-center gap-1 flex-wrap">
+                      <text class="font-bold text-xs {{item.done ? 'text-emerald' : 'text-sky'}}">{{item.name}}</text>
+                      <text class="text-10 text-muted" style="background:var(--bg-main); padding:1px 5px; border-radius:3px;">{{item.eraName}}</text>
+                    </view>
+                    <view class="text-10 text-muted" style="margin:2px 0;">{{item.desc}}</view>
+                    <view wx:if="{{item.done}}" class="text-10 text-emerald">✅ 已完成研究</view>
+                    <view wx:elif="{{!item.reqOk}}" class="text-10 text-rose">前置: {{item.reqText}}</view>
+                    <view wx:else class="text-10">消耗: <template is="costPartsList" data="{{parts: item.costParts}}" /></view>
+                  </view>
+                  <view class="flex items-center gap-1 shrink-0">
+                    <button wx:if="{{!item.done && !item.inQueue}}" class="pixel-btn bg-slate text-10 font-bold" style="min-height:34px; padding:4px 6px;" data-tech="{{item.id}}" bindtap="onQueueTech">+Q</button>
+                    <button
+                      class="pixel-btn {{item.done ? 'bg-slate' : (item.afford ? 'bg-sky' : 'bg-slate')}} text-11 font-bold"
+                      style="min-height:34px; padding:4px 9px;"
+                      disabled="{{item.done || !item.afford}}"
+                      hover-class="{{!item.done && item.afford ? 'pixel-btn-hover' : 'none'}}"
+                      data-tech="{{item.id}}"
+                      bindtap="onResearchTech"
+                    >{{item.done ? '已研究' : '研究'}}</button>
+                  </view>
+                </view>
+              </block>
+
+              <!-- 3B. ARPA 分段超级工程 -->
+              <block wx:elif="{{panel.kind === 'tech_arpa'}}">
+                <view wx:if="{{!panel.hasUnlocked}}" class="pixel-card flex flex-col items-center gap-2 text-center" style="padding:20px;">
+                  <text class="text-muted text-xs">研究【建筑学】或进入城市/工业时代后，将逐步解锁纪念碑、证券交易所、铁路、超级对撞机与发射设施等 ARPA 超级工程！</text>
+                  <button class="pixel-btn bg-sky text-11 font-bold" style="padding:5px 12px;" data-goto="tech:tech_tree" bindtap="onGotoTab">🔬 前往【科技树】</button>
+                </view>
+                <block wx:else>
+                  <view class="pixel-card text-11 text-muted" style="padding:6px 8px;">
+                    🗼 <text class="text-amber font-bold">ARPA 分段超级工程</text>：支持按 1% / 10% / 25% / 100% 逐步注资建造！
+                  </view>
+                  <view wx:for="{{panel.projects}}" wx:key="id" class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                    <view class="flex items-center justify-between flex-wrap gap-1">
+                      <text class="font-bold text-amber text-xs">{{item.title}} <text class="text-sky">[Lv.{{item.rank}}{{item.maxRankText}}]</text></text>
+                      <text class="text-10 text-emerald">当前进度: {{item.pct}}%</text>
+                    </view>
+                    <view class="progress-track">
+                      <view class="progress-fill-emerald" style="width:{{item.pct}}%;"></view>
+                    </view>
+                    <view class="text-10 text-muted">{{item.desc}} | <text class="text-sky">{{item.effectText}}</text></view>
+                    <view wx:if="{{item.maxed}}" class="text-10 text-emerald font-bold">✅ 已达到满级工程规模</view>
+                    <block wx:else>
+                      <view class="text-10">整级造价: <template is="costPartsList" data="{{parts: item.totalCostParts}}" /></view>
+                      <view class="flex items-center gap-1 flex-wrap">
+                        <button
+                          wx:for="{{item.steps}}"
+                          wx:for-item="st"
+                          wx:key="pct"
+                          class="pixel-btn {{st.afford ? 'bg-indigo' : 'bg-slate'}} text-10 font-bold flex-1"
+                          style="min-height:28px;"
+                          disabled="{{!st.afford}}"
+                          data-id="{{item.id}}"
+                          data-pct="{{st.pct}}"
+                          bindtap="onInvestArpa"
+                        >+{{st.pct}}%</button>
+                      </view>
+                    </block>
+                  </view>
+                </block>
+              </block>
+
+              <!-- 3C. 基因测序与基因编辑实验室 -->
+              <block wx:elif="{{panel.kind === 'tech_gene'}}">
+                <view wx:if="{{!panel.unlocked}}" class="pixel-card flex flex-col items-center gap-2 text-center" style="padding:20px;">
+                  <text class="text-muted text-xs">研究【电子学】、进入【原子时代】或建造【生命科学实验室】后解锁基因组测序与基因编辑实验室！</text>
+                  <button class="pixel-btn bg-sky text-11 font-bold" style="padding:5px 12px;" data-goto="tech:tech_tree" bindtap="onGotoTab">🔬 前往【科技树】</button>
+                </view>
+                <block wx:else>
+                  <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                    <view class="flex items-center justify-between flex-wrap gap-1">
+                      <text class="font-bold text-purple text-xs">🧬 基因组测序实验室 (Genes: <text class="text-amber font-bold">{{panel.genes}}</text> 枚)</text>
+                      <view class="flex items-center gap-1">
+                        <button class="pixel-btn {{panel.seqActive ? 'bg-emerald' : 'bg-slate'}} text-10 font-bold" style="padding:3px 8px;" bindtap="onToggleSeqActive">{{panel.seqActive ? '🧬 测序中' : '▶ 开始测序'}}</button>
+                        <button class="pixel-btn {{panel.seqBoost ? 'bg-amber' : 'bg-slate'}} text-10 font-bold" style="padding:3px 8px;" bindtap="onToggleSeqBoost">⚡ 2倍速</button>
+                      </view>
+                    </view>
+                    <view class="progress-track">
+                      <view class="progress-fill-purple" style="width:{{panel.seqPct}}%;"></view>
+                    </view>
+                    <view class="text-10 text-muted">测序进度: {{panel.seqProgress}} / {{panel.seqMax}} ({{panel.seqPct}}%) — 消耗少量知识自动解码基因点数</view>
+                  </view>
+
+                  <view wx:if="{{panel.negTraits.length > 0}}" class="pixel-card flex flex-col gap-1" style="padding:8px;">
+                    <view class="font-bold text-rose text-xs">✂️ 物种负面特质消除 {{panel.canMut ? '(每次消耗 3 基因)' : '(需在 CRISPR 解锁【突变】)'}}</view>
+                    <view class="flex items-center gap-1 flex-wrap">
+                      <button
+                        wx:for="{{panel.negTraits}}"
+                        wx:key="id"
+                        class="pixel-btn {{item.canRemove ? 'bg-rose' : 'bg-slate'}} text-10 font-bold"
+                        style="padding:3px 8px;"
+                        disabled="{{!item.canRemove}}"
+                        data-id="{{item.id}}"
+                        bindtap="onRemoveNegTrait"
+                      >消除【{{item.name}}】</button>
+                    </view>
+                  </view>
+
+                  <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                    <view class="font-bold text-sky text-xs">🧪 次要基因强化特质 (消耗 Genes 点数永久叠层)</view>
+                    <view wx:for="{{panel.minorTraits}}" wx:key="id" class="sub-row-box flex items-center justify-between gap-2" style="padding:5px 7px;">
+                      <view class="min-w-0 flex-1">
+                        <view class="font-bold text-11 text-amber">{{item.name}} <text class="text-sky">[Lv.{{item.lv}}]</text></view>
+                        <view class="text-10 text-muted">{{item.desc}}</view>
+                      </view>
+                      <button
+                        class="pixel-btn {{item.afford ? 'bg-purple' : 'bg-slate'}} text-10 font-bold shrink-0"
+                        style="padding:3px 9px;"
+                        disabled="{{!item.afford}}"
+                        data-id="{{item.id}}"
+                        bindtap="onBuyMinorTrait"
+                      >升级({{item.cost}}基因)</button>
+                    </view>
+                  </view>
+                </block>
+              </block>
+
+              <!-- 4A. 双轨转生与下一轮星系预设 -->
+              <block wx:elif="{{panel.kind === 'pres_reset'}}">
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px; border-color:#e11d48; background:rgba(225,29,72,0.08);">
+                  <view class="flex items-center justify-between flex-wrap gap-2">
+                    <view>
+                      <view class="font-bold text-rose text-xs">☢️ 第一阶转生：相互保证毁灭 (MAD 核弹重置)</view>
+                      <view class="text-10 text-muted">
+                        核爆次数: <text class="text-amber font-bold">{{panel.madCount}}</text> |
+                        <text class="{{panel.rapidMutation ? 'text-emerald' : ''}}">{{panel.rapidMutation ? '✅快速突变' : '未激活'}}</text>
+                        <text wx:if="{{panel.ancientRuins}}" class="text-sky" style="margin-left:4px;">✅远古遗迹</text>
+                      </view>
+                    </view>
+                    <view class="flex items-center gap-1">
+                      <button
+                        class="pixel-btn {{panel.madArmed ? 'bg-amber' : 'bg-slate'}} text-10 font-bold"
+                        style="min-height:32px; padding:4px 8px;"
+                        disabled="{{!panel.canMad}}"
+                        bindtap="onToggleMadArm"
+                      >{{panel.madArmed ? '🔓 已解锁保险' : '🔒 武装核弹'}}</button>
+                      <button
+                        class="pixel-btn {{(panel.canMad && panel.madArmed) ? 'bg-rose' : 'bg-slate'}} text-11 font-bold"
+                        style="min-height:32px; padding:4px 10px;"
+                        disabled="{{!(panel.canMad && panel.madArmed)}}"
+                        bindtap="onTriggerMad"
+                      >☢️ 发射 (+{{panel.madGain}}余烬)</button>
+                    </view>
+                  </view>
+                  <view class="text-10 text-muted">条件：进入【原子时代】、研究【核裂变】并建造至少 1 座【导弹发射井】。</view>
+                </view>
+
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px; border-color:#6b21a8;">
+                  <view class="flex items-center justify-between flex-wrap gap-2">
+                    <view>
+                      <view class="font-bold text-purple text-xs">🚀 第二阶终局跃迁：恒星际殖民方舟 (Bioseed)</view>
+                      <view class="text-10 text-muted">
+                        累计质粒/余烬: <text class="text-amber font-bold">{{panel.lifetimeShards}}</text> |
+                        可用: <text class="text-purple font-bold">{{panel.genesisShards}}</text> |
+                        噬菌体: <text class="text-emerald font-bold">{{panel.phage}}</text>
+                      </view>
+                    </view>
+                    <button
+                      class="pixel-btn {{panel.canP ? 'bg-purple' : 'bg-slate'}} text-11 font-bold"
+                      style="min-height:34px; padding:4px 10px;"
+                      disabled="{{!panel.canP}}"
+                      bindtap="onTriggerPrestige"
+                    >{{panel.canP ? '🚀 启航 (+' + panel.gain + '余烬 +' + panel.phageGain + '噬菌体)' : '未达太空终局 (预计+' + panel.gain + ')'}}</button>
+                  </view>
+                  <view class="text-10 text-muted">条件：进入【太空文明】、研究【星际航行】并建造【恒星际殖民方舟】。</view>
+                </view>
+
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="font-bold text-sky text-xs">🌌 下一轮转生降临星系预设 (Bioseed / MAD 生效)</view>
+                  <view class="flex flex-col gap-1">
+                    <view class="text-10 text-muted">目标宇宙法则: <text class="text-purple">{{panel.preset.curUnivEffect}}</text></view>
+                    <view class="flex items-center gap-1 flex-wrap">
+                      <button
+                        wx:for="{{panel.universes}}"
+                        wx:key="id"
+                        class="pixel-btn {{item.active ? 'bg-purple' : 'bg-slate'}} text-10"
+                        style="padding:2px 7px;"
+                        data-field="universe"
+                        data-val="{{item.id}}"
+                        bindtap="onSetPreset"
+                      >{{item.icon}}{{item.name}}</button>
+                    </view>
+
+                    <view class="text-10 text-muted" style="margin-top:4px;">目标星球群系: <text class="text-emerald">{{panel.preset.curBiomeEffects}}</text></view>
+                    <view class="flex items-center gap-1 flex-wrap">
+                      <button
+                        wx:for="{{panel.biomes}}"
+                        wx:key="id"
+                        class="pixel-btn {{item.active ? 'bg-emerald' : 'bg-slate'}} text-10"
+                        style="padding:2px 6px;"
+                        data-field="biome"
+                        data-val="{{item.id}}"
+                        bindtap="onSetPreset"
+                      >{{item.icon}}{{item.name}}</button>
+                    </view>
+
+                    <view class="text-10 text-muted" style="margin-top:4px;">目标行星特性: <text class="text-amber">{{panel.preset.curPtDesc}}</text></view>
+                    <view class="flex items-center gap-1 flex-wrap">
+                      <button
+                        wx:for="{{panel.planetTraits}}"
+                        wx:key="id"
+                        class="pixel-btn {{item.active ? 'bg-amber' : 'bg-slate'}} text-10"
+                        style="padding:2px 6px;"
+                        data-field="planetTrait"
+                        data-val="{{item.id}}"
+                        bindtap="onSetPreset"
+                      >{{item.name}}</button>
+                    </view>
+
+                    <view class="text-10 text-muted" style="margin-top:4px;">
+                      目标演化物种: <text class="text-sky font-bold">{{panel.preset.curSpecIcon}} {{panel.preset.curSpecName}}</text> <text class="text-dim">({{panel.preset.curSpecDesc}})</text>
+                    </view>
+                    <scroll-view scroll-y="true" show-scrollbar="false" class="species-preset-grid-scroll">
+                      <view class="species-preset-grid">
+                        <button
+                          wx:for="{{panel.speciesList}}"
+                          wx:key="id"
+                          class="pixel-btn species-chip-btn {{item.active ? 'bg-sky' : 'bg-slate'}} text-10 font-bold"
+                          style="padding:3px 5px;"
+                          data-field="species"
+                          data-val="{{item.id}}"
+                          bindtap="onSetPreset"
+                        ><text>{{item.icon}}</text><text class="species-chip-name">{{item.name}}</text></button>
+                      </view>
+                    </scroll-view>
+                  </view>
+                </view>
+              </block>
+
+              <!-- 4B. CRISPR 基因池 -->
+              <block wx:elif="{{panel.kind === 'pres_crispr'}}">
+                <view class="pixel-card flex items-center justify-between" style="padding:7px 8px;">
+                  <text class="font-bold text-purple text-xs">🧬 CRISPR 基因池升级 ({{panel.unlockedCnt}}/{{panel.totalCnt}})</text>
+                  <text class="text-xs font-bold text-amber">可用质粒/余烬: {{panel.shardsText}}</text>
+                </view>
+                <view
+                  wx:for="{{panel.items}}"
+                  wx:key="id"
+                  class="pixel-card flex items-center justify-between gap-2"
+                  style="padding:6px 8px; {{item.done ? 'border-color:#059669; background:rgba(16,185,129,0.08);' : ''}}"
+                >
+                  <view class="min-w-0 flex-1">
+                    <view class="font-bold text-xs {{item.done ? 'text-emerald' : 'text-purple'}}">{{item.name}}</view>
+                    <view class="text-10 text-muted">{{item.desc}}</view>
+                    <view wx:if="{{!item.done && !item.reqOk}}" class="text-10 text-rose">前置CRISPR: {{item.reqNames}}</view>
+                  </view>
+                  <button
+                    class="pixel-btn {{item.done ? 'bg-slate' : (item.afford ? 'bg-purple' : 'bg-slate')}} text-10 font-bold shrink-0"
+                    style="min-height:32px; padding:4px 9px;"
+                    disabled="{{item.done || !item.afford}}"
+                    data-id="{{item.id}}"
+                    bindtap="onBuyCrispr"
+                  >{{item.done ? '已激活' : item.cost + ' 余烬'}}</button>
+                </view>
+              </block>
+
+              <!-- 4C. 永久天赋与 51 项主线任务 -->
+              <block wx:elif="{{panel.kind === 'pres_perks'}}">
+                <view wx:for="{{panel.perks}}" wx:key="id" class="pixel-card flex items-center justify-between gap-2" style="padding:6px 8px;">
+                  <view class="min-w-0 flex-1">
+                    <view class="font-bold text-xs text-amber">{{item.icon}} {{item.name}} <text class="text-sky">[Lv.{{item.lv}}/5]</text></view>
+                    <view class="text-10 text-muted">{{item.desc}}</view>
+                  </view>
+                  <button
+                    class="pixel-btn {{item.afford ? 'bg-purple' : 'bg-slate'}} text-11 font-bold shrink-0"
+                    style="min-height:32px; padding:4px 9px;"
+                    disabled="{{!item.afford}}"
+                    data-id="{{item.id}}"
+                    bindtap="onBuyPerk"
+                  >{{item.maxed ? '已满级' : '升级 (' + item.cost + ')'}}</button>
+                </view>
+
+                <view class="flex items-center justify-between" style="margin-top:4px;">
+                  <text class="font-bold text-emerald text-xs">📜 51 项顺序主线 ({{panel.missionIndex}} / 51)</text>
+                  <button class="pixel-btn bg-slate text-10" style="padding:2px 7px;" bindtap="onToggleAllMissions">{{panel.showAllMissions ? '仅看当前进度' : '展开全部 51 项'}}</button>
+                </view>
+                <view
+                  wx:for="{{panel.missions}}"
+                  wx:key="id"
+                  class="pixel-card flex items-center justify-between gap-2"
+                  style="padding:5px 8px; {{item.isCur ? 'border-color:#10b981; background:rgba(16,185,129,0.08);' : ''}}"
+                >
+                  <view class="text-11 font-bold flex-1 {{item.isDone ? 'text-muted' : (item.isCur ? 'text-emerald' : 'text-main')}}">
+                    [{{item.id}}] {{item.name}}：<text class="text-muted font-normal">{{item.desc}}</text>
+                  </view>
+                  <text class="text-10 shrink-0 {{item.isDone ? 'text-emerald' : 'text-amber'}}">{{item.isDone ? '✅已完成' : item.rewardText}}</text>
+                </view>
+              </block>
+
+              <!-- 5A. 文明历史与事件日志 -->
+              <block wx:elif="{{panel.kind === 'sys_logs'}}">
+                <view class="pixel-card flex items-center justify-between flex-wrap gap-1" style="padding:6px 8px;">
+                  <text class="font-bold text-sky text-xs">📜 文明历史与事件日志</text>
+                  <view class="flex items-center gap-1 flex-wrap">
+                    <button
+                      wx:for="{{panel.filters}}"
+                      wx:key="id"
+                      class="pixel-btn {{item.active ? 'bg-sky' : 'bg-slate'}} text-10"
+                      style="padding:2px 7px;"
+                      data-cat="{{item.id}}"
+                      bindtap="onSelectLogCat"
+                    >{{item.name}}</button>
+                  </view>
+                </view>
+                <view class="pixel-card flex flex-col gap-1" style="padding:8px;">
+                  <view wx:if="{{panel.logs.length === 0}}" class="text-11 text-muted text-center" style="padding:16px;">
+                    暂无相关记录。时代推进、随机事件、外交战役和成就达成都会自动收录至此。
+                  </view>
+                  <view wx:for="{{panel.logs}}" wx:key="idx" class="text-11" style="border-bottom:1px dashed var(--border-dim); padding:3px 0;">
+                    <text class="text-dim">{{item.stamp}} </text>
+                    <text class="text-{{item.tone || 'main'}}">{{item.text}}</text>
+                  </view>
+                </view>
+              </block>
+
+              <!-- 5B. 成就墙与士气明细 -->
+              <block wx:elif="{{panel.kind === 'sys_ach'}}">
+                <view wx:if="{{panel.moraleBreakdown}}" class="pixel-card flex flex-col gap-1" style="padding:8px;">
+                  <view class="font-bold text-emerald text-xs" style="margin-bottom:2px;">😊 城市士气构成明细 ({{panel.moraleBreakdown.final}}% / 上限 {{panel.moraleBreakdown.cap}}%)</view>
+                  <view class="text-10 morale-grid">
+                    <view>粮食住房基础: <text class="font-bold">{{panel.moraleBreakdown.base}}%</text></view>
+                    <view>环境特质月相: <text class="font-bold {{panel.moraleBreakdown.envAndTraits >= 0 ? 'text-emerald' : 'text-rose'}}">{{panel.moraleBreakdown.envAndTraits >= 0 ? '+' : ''}}{{panel.moraleBreakdown.envAndTraits}}%</text></view>
+                    <view>税率影响: <text class="font-bold {{panel.moraleBreakdown.tax >= 0 ? 'text-emerald' : 'text-rose'}}">{{panel.moraleBreakdown.tax >= 0 ? '+' : ''}}{{panel.moraleBreakdown.tax}}%</text></view>
+                    <view>政体加成: <text class="font-bold {{panel.moraleBreakdown.government >= 0 ? 'text-emerald' : 'text-rose'}}">{{panel.moraleBreakdown.government >= 0 ? '+' : ''}}{{panel.moraleBreakdown.government}}%</text></view>
+                    <view>剧场茅屋: <text class="font-bold text-sky">+{{panel.moraleBreakdown.buildings}}%</text></view>
+                    <view>艺人娱乐: <text class="font-bold text-sky">+{{panel.moraleBreakdown.entertainers}}%</text></view>
+                    <view>失业压力: <text class="font-bold text-rose">{{panel.moraleBreakdown.unemployed}}%</text></view>
+                    <view>工作压力: <text class="font-bold text-rose">{{panel.moraleBreakdown.stress}}%</text></view>
+                  </view>
+                </view>
+
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="flex items-center justify-between flex-wrap gap-1">
+                    <text class="font-bold text-amber text-xs">🏆 文明成就 ({{panel.doneCnt}}/{{panel.totalCnt}})</text>
+                    <text class="text-11 {{panel.unlockedCrispr ? 'text-emerald' : 'text-muted'}}">
+                      累计精通: +{{panel.masteryPctText}}% {{panel.unlockedCrispr ? '(已激活全局产能)' : '(需 CRISPR【基因解锁】激活)'}}
+                    </text>
+                  </view>
+                  <view wx:for="{{panel.achievements}}" wx:key="id" class="sub-row-box {{item.got ? 'ach-done-box' : ''}} flex items-center justify-between gap-2" style="padding:5px 7px;">
+                    <view class="min-w-0 flex-1">
+                      <view class="font-bold text-11 {{item.got ? 'text-amber' : 'text-muted'}}">{{item.got ? '🏆' : '🔒'}} {{item.name}} <text class="text-10 text-dim">[{{item.category}}]</text></view>
+                      <view class="text-10 text-muted">{{item.desc}}</view>
+                    </view>
+                    <text class="text-10 shrink-0 {{item.got ? 'text-emerald' : 'text-dim'}}">+{{item.mastery}}%</text>
+                  </view>
+                </view>
+              </block>
+
+              <!-- 5C. 百科 -->
+              <block wx:elif="{{panel.kind === 'sys_wiki'}}">
+                <template is="speciesSummaryCard" data="{{summary: panel.summary}}" />
+                <view class="pixel-card flex flex-col gap-1" style="padding:8px;">
+                  <view class="font-bold text-sky text-xs">🌍 当前星球与天文环境百科</view>
+                  <view class="text-10 text-muted">
+                    <view>• 群系：<text class="font-bold">{{panel.biomeName}}</text> — {{panel.biomeDesc}} ({{panel.biomeEffects}})</view>
+                    <view>• 行星特性：<text class="font-bold">{{panel.ptName}}</text> — {{panel.ptDesc}}</view>
+                    <view>• 月相：{{panel.moonIcon}} <text class="font-bold">{{panel.moonName}}</text> ({{panel.moonBonus}}) | 星象：{{panel.zodiacSymbol}} <text class="font-bold">{{panel.zodiacName}}</text> ({{panel.zodiacDesc}})</view>
+                  </view>
+                </view>
+
+                <view class="pixel-card flex flex-col gap-1" style="padding:8px;">
+                  <view class="font-bold text-emerald text-xs" style="margin-bottom:4px;">{{panel.resTitle}}</view>
+                  <view wx:for="{{panel.resources}}" wx:key="id" class="sub-row-box flex items-center justify-between text-11" style="padding:4px 7px; border-radius:3px;">
+                    <text><text class="font-bold {{item.unlocked ? 'text-main' : 'text-dim'}}">{{item.name}}</text> <text class="text-10 text-dim">[{{item.eraName}}]</text></text>
+                    <text wx:if="{{item.unlocked}}">{{item.valText}} / {{item.capText}} <text class="{{item.rateCls}}">({{item.rateText}})</text></text>
+                    <text wx:else class="text-dim">未解锁</text>
+                  </view>
+                </view>
+              </block>
+
+              <!-- 5D. 主题、数字格式与存档管理 -->
+              <block wx:elif="{{panel.kind === 'sys_cfg'}}">
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="font-bold text-sky text-xs">💾 终端设置与跨设备存档</view>
+                  <view class="cfg-grid-3">
+                    <button class="pixel-btn {{panel.sound ? 'bg-emerald' : 'bg-slate'}} text-11 font-bold" style="min-height:36px;" bindtap="onToggleSound">🔊 音效: {{panel.sound ? '开' : '关'}}</button>
+                    <button class="pixel-btn {{panel.crt ? 'bg-sky' : 'bg-slate'}} text-11 font-bold" style="min-height:36px;" bindtap="onToggleCrt">📺 扫描线: {{panel.crt ? '开' : '关'}}</button>
+                    <button class="pixel-btn {{panel.boring ? 'bg-amber' : 'bg-slate'}} text-11 font-bold" style="min-height:36px;" bindtap="onToggleBoring">🎭 趣味事件: {{panel.boring ? '关' : '开'}}</button>
+                    <button class="pixel-btn bg-amber text-11 font-bold" style="min-height:36px;" bindtap="onManualSave">💾 手动存档</button>
+                    <button class="pixel-btn bg-sky text-11 font-bold" style="min-height:36px;" bindtap="onExportSave">📤 导出存档码</button>
+                    <button class="pixel-btn bg-indigo text-11 font-bold" style="min-height:36px;" bindtap="onImportSave">📥 导入存档码</button>
+                  </view>
+                  <button class="pixel-btn bg-rose text-11 font-bold w-full" style="min-height:34px;" bindtap="onHardReset">🗑️ 清空全部存档（硬重置）</button>
+                </view>
+
+                <view class="pixel-card flex flex-col gap-2" style="padding:8px;">
+                  <view class="font-bold text-purple text-xs">🎨 Evolve 视觉主题与数字格式</view>
+                  <view class="flex items-center gap-1 flex-wrap">
+                    <text class="text-10 text-muted">数字格式:</text>
+                    <button
+                      wx:for="{{panel.numFormats}}"
+                      wx:key="id"
+                      class="pixel-btn {{item.active ? 'bg-sky' : 'bg-slate'}} text-10 font-bold"
+                      style="padding:3px 8px;"
+                      data-fmt="{{item.id}}"
+                      bindtap="onSetNumFormat"
+                    >{{item.name}}</button>
+                  </view>
+                  <view class="text-10 text-muted">界面主题:</view>
+                  <view class="theme-grid">
+                    <button
+                      wx:for="{{panel.themes}}"
+                      wx:key="id"
+                      class="pixel-btn {{item.active ? 'bg-emerald' : 'bg-slate'}} text-10 font-bold"
+                      style="min-height:30px;"
+                      data-theme="{{item.id}}"
+                      bindtap="onSetTheme"
+                    >{{item.name}}</button>
+                  </view>
+                  <view class="text-10 text-dim">存档码与网页版 (evolve_web) 与小游戏端完全互通；离线挂机收益受【深度休眠】天赋加成（8~48 小时）。</view>
+                </view>
+              </block>
+
+            </view>
+          </scroll-view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 浮动文字对象池 -->
+  <view
+    wx:for="{{floatPool}}"
+    wx:key="slot"
+    class="float-text {{item.animClass}}"
+    style="left:{{item.x}}px; top:{{item.y}}px; color:{{item.color}};"
+  >{{item.text}}</view>
+
+  <!-- CRT 扫描线 -->
+  <view wx:if="{{crtEnabled}}" class="crt-overlay"></view>
+
+  <!-- Toast 提示条 -->
+  <view class="toast-bar {{toastShow ? 'show' : ''}}" style="top:{{viewport.headerTopPad + 8}}px;">{{toastMsg}}</view>
+
+  <!-- 自定义模态框 -->
+  <view wx:if="{{modal.open}}" class="modal-backdrop" bindtap="onModalClose">
+    <view class="modal-card" catchtap="onStopProp">
+      <view class="flex items-center justify-between">
+        <text class="text-sky font-bold" style="font-size:14px;">{{modal.title}}</text>
+        <button class="pixel-btn bg-slate" style="padding:2px 8px;" bindtap="onModalClose">✕</button>
+      </view>
+      <view class="text-xs text-muted flex flex-col gap-1">
+        <view wx:for="{{modal.lines}}" wx:key="idx" class="{{item.cls}}">{{item.text}}</view>
+      </view>
+      <scroll-view wx:if="{{modal.showTextarea && modal.readonly}}" scroll-y="true" class="modal-textarea">
+        <text selectable="true" user-select="true">{{modal.textareaValue}}</text>
+      </scroll-view>
+      <textarea
+        wx:elif="{{modal.showTextarea}}"
+        class="modal-textarea"
+        value="{{modal.textareaValue}}"
+        maxlength="-1"
+        placeholder="在此粘贴存档码..."
+        bindinput="onModalInput"
+      ></textarea>
+      <view class="flex justify-between gap-2">
+        <button
+          wx:for="{{modal.buttons}}"
+          wx:key="text"
+          class="pixel-btn {{item.cls || 'bg-slate'}} flex-1"
+          style="padding:6px 10px;"
+          data-idx="{{index}}"
+          bindtap="onModalBtnTap"
+        >{{item.text}}</button>
+      </view>
+    </view>
+  </view>
+</view>

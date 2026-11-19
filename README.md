@@ -63,10 +63,19 @@ GenesisEmber/
     save-code.js          兼容原版的存档码编解码
   assets/audio/           本地生成的四种 8-bit WAV 音效
 evolve_web/               独立自包含 H5 网页版（含 rna.html、data/、js/）
+miniprogram/              独立微信小程序版（原生 WXML + WXSS + 2D Canvas，完整对齐 evolve_web）
 tools/                    开发构建与本地微信预览脚本
-tests/                    游戏逻辑、H5 模块与微信生命周期检查
+tests/                    游戏逻辑、H5 模块、小程序与微信生命周期检查
 artifacts/                本次预览截图
 ```
+
+## 微信小程序版 (`miniprogram/`)
+
+`miniprogram/` 是基于 `evolve_web` 完整样式布局与增强系统逻辑搭建的独立原生微信小程序工程（与根目录小游戏互相隔离，根目录打包已忽略 `miniprogram/`）：
+
+1. 在微信开发者工具选择导入项目，目录选择 **`GenesisEmber/miniprogram`**。
+2. 项目类型为**小程序**（`compileType: "miniprogram"`）；如需更换或使用测试号，可在 `miniprogram/project.config.json` 或开发者工具详情中切换 AppID。
+3. 支持自适应 `<768px` 手机单屏与 `>=768px` 平板/PC 双栏布局、胶囊与刘海安全区避让、2D Canvas 15FPS 像素舞台、path 级最小差量 `setData` 渲染、8 套视觉主题、全量 Evolve 增强玩法，以及与 `evolve_web` 完全互通的 `pixel_human_era_save_v3` Base64 存档码导入/导出。
 
 ## 验证
 

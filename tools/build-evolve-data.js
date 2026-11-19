@@ -49,6 +49,7 @@ for (const sp of bundle.species) {
 }
 
 const outPath = path.join(DATA_DIR, 'evolve-bundle.js');
+const miniOutPath = path.join(ROOT, 'miniprogram', 'data', 'evolve-bundle.js');
 const content = `/* 自动生成文件，请勿直接手工修改；请修改 evolve_web/data/*.json 后运行 node tools/build-evolve-data.js */
 (function (root) {
   'use strict';
@@ -63,8 +64,10 @@ const content = `/* 自动生成文件，请勿直接手工修改；请修改 ev
 `;
 
 fs.writeFileSync(outPath, content, 'utf8');
+fs.mkdirSync(path.dirname(miniOutPath), { recursive: true });
+fs.writeFileSync(miniOutPath, content, 'utf8');
 console.log(
-  `[build-evolve-data] 成功生成 ${path.relative(ROOT, outPath)}: ` +
+  `[build-evolve-data] 成功生成 ${path.relative(ROOT, outPath)} 与 ${path.relative(ROOT, miniOutPath)}: ` +
   `${bundle.biomes.length} 群系, ${bundle.planetTraits.length} 行星特性, ` +
   `${bundle.genera.length} 种群, ${bundle.species.length} 物种, ` +
   `${Object.keys(bundle.traits).length} 主修特质, ${bundle.minorTraits.length} 次要特质, ` +
