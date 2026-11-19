@@ -132,8 +132,7 @@
     if (!Number.isFinite(n)) return '0';
     const abs = Math.abs(n);
     if (abs < 1000) {
-      if (abs >= 100) return Math.floor(n).toString();
-      return n.toFixed(1).replace(/\.0$/, '');
+      return (n < 0 ? Math.ceil(n) : Math.floor(n)).toString();
     }
     const fmtMode = mode || 'metric';
     if (fmtMode === 'scientific') {
@@ -146,12 +145,12 @@
       const mant = n / Math.pow(10, exp);
       return `${mant.toFixed(2)}e${exp}`;
     }
-    // metric / compact
+    // metric / compact：保留固定小数位，避免在有无小数点间反复跳动导致布局抖动
     const suffixes = ['', 'K', 'M', 'G', 'T', 'P', 'E'];
     const tier = Math.min(suffixes.length - 1, Math.floor(Math.log10(abs) / 3));
     const scaled = n / Math.pow(10, tier * 3);
     const digits = Math.abs(scaled) >= 100 ? 1 : 2;
-    return scaled.toFixed(digits).replace(/\.0+$/, '') + suffixes[tier];
+    return scaled.toFixed(digits) + suffixes[tier];
   }
 
   /**

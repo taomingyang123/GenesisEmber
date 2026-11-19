@@ -43,6 +43,7 @@
             background-color: var(--bg-main);
             color: var(--text-main);
             font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
             font-size: 13px;
             line-height: 1.4;
         }
@@ -183,8 +184,10 @@
             padding: 3px 7px;
             display: flex;
             flex-direction: column;
-            min-width: 68px;
+            min-width: 96px;
+            flex-shrink: 0;
             cursor: pointer;
+            overflow: hidden;
         }
 
         .kpi-pill.prestige-pill {
@@ -196,12 +199,19 @@
             font-size: 10px;
             color: var(--text-muted);
             line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .kpi-val {
             font-size: 12px;
             font-weight: 700;
             line-height: 1.25;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
         }
 
         .mission-banner {
@@ -366,12 +376,14 @@
             border: 1px solid #233149;
             border-radius: 3px;
             padding: 3px 5px;
+            min-height: 36px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 4px;
             font-size: 11px;
             cursor: pointer;
+            overflow: hidden;
         }
 
         .res-mini-card:hover {
@@ -379,9 +391,11 @@
         }
 
         .res-mini-left {
+            flex: 1;
             min-width: 0;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         .res-mini-name {
@@ -395,39 +409,64 @@
         .res-mini-cap {
             font-size: 10px;
             color: #94a3b8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
         }
 
         .res-mini-right {
             text-align: right;
+            min-width: 56px;
+            max-width: 48%;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         .res-mini-rate {
             font-size: 10px;
             font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
         }
 
         .res-mini-eta {
             font-size: 9px;
             color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
         }
 
         /* 左下双按钮操作栏 */
         .left-action-bar {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             gap: 6px;
             flex-shrink: 0;
         }
 
         .action-main-btn {
+            min-width: 0;
             min-height: 42px;
             padding: 4px 6px;
             flex-direction: column;
             gap: 1px;
             text-align: center;
+            overflow: hidden;
+        }
+
+        .action-main-btn > span {
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-variant-numeric: tabular-nums;
         }
 
         /* 右侧 5 独立功能面板 */
@@ -654,6 +693,7 @@
         @media (max-width: 767px) {
             #app-shell { padding: 4px; gap: 4px; }
             #top-header { padding: 4px 6px; gap: 3px; }
+            .kpi-pill { min-width: 78px; flex: 1 1 auto; padding: 3px 6px; }
             #left-pane { padding: 5px; gap: 4px; }
             #canvas-wrapper { width: 88px; height: 88px; }
             #left-res-section { max-height: 76px; padding: 4px; }
@@ -1574,14 +1614,17 @@
             if (abs >= 1e6) return (n / 1e6).toFixed(2) + 'M';
             if (abs >= 1e4) return (n / 1e3).toFixed(1) + 'K';
             if (abs >= 1e3) return (n / 1e3).toFixed(2) + 'K';
-            if (abs >= 100) return Math.floor(n).toString();
-            if (abs >= 10) return n.toFixed(1).replace(/\.0$/, '');
-            return n.toFixed(1).replace(/\.0$/, '');
+            return (n < 0 ? Math.ceil(n) : Math.floor(n)).toString();
         }
 
         function fmtRate(r) {
-            if (Math.abs(r) < 0.05) return '0.0/s';
-            return (r > 0 ? '+' : '') + r.toFixed(1) + '/s';
+            if (!isFinite(r) || Math.abs(r) < 0.05) return '0.0/s';
+            const sign = r > 0 ? '+' : '-';
+            const abs = Math.abs(r);
+            if (abs >= 1e9) return `${sign}${(abs / 1e9).toFixed(1)}G/s`;
+            if (abs >= 1e6) return `${sign}${(abs / 1e6).toFixed(1)}M/s`;
+            if (abs >= 1e3) return `${sign}${(abs / 1e3).toFixed(1)}K/s`;
+            return `${sign}${abs.toFixed(1)}/s`;
         }
 
         let toastTimer = null;

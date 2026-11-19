@@ -9,9 +9,15 @@ function fmt(n) {
   for (const [threshold, divisor, places, unit] of [[1e9,1e9,2,'B'],[1e6,1e6,2,'M'],[1e4,1e3,1,'K'],[1e3,1e3,2,'K']]) {
     if (Math.abs(n)>=threshold) return (n/divisor).toFixed(places)+unit;
   }
-  return Math.abs(n)>=100 ? String(Math.floor(n)) : n.toFixed(1).replace(/\.0$/,'');
+  return String(n < 0 ? Math.ceil(n) : Math.floor(n));
 }
-const rateText = v => Math.abs(v)<0.05 ? '0.0/s' : (v>0?'+':'')+v.toFixed(1)+'/s';
+const rateText = v => {
+  if (!Number.isFinite(v) || Math.abs(v) < 0.05) return '0.0/s';
+  const sign = v > 0 ? '+' : '-', abs = Math.abs(v);
+  if (abs >= 1e6) return sign + (abs / 1e6).toFixed(1) + 'M/s';
+  if (abs >= 1e3) return sign + (abs / 1e3).toFixed(1) + 'K/s';
+  return sign + abs.toFixed(1) + '/s';
+};
 const inside = (r,x,y) => r && x>=r.x && y>=r.y && x<r.x+r.w && y<r.y+r.h;
 
 class GameUI {
